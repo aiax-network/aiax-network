@@ -1,0 +1,21 @@
+[submodule "extra/ethermint"]
+	path = extra/ethermint
+	url = https://github.com/aiax-network/ethermint.git
+[submodule "extra/gravity-bridge"]
+	path = extra/gravity-bridge
+	url = https://github.com/aiax-network/gravity-bridge
+[submodule "extra/cosmos-sdk"]
+	path = extra/cosmos-sdk
+	url = https://github.com/cosmos/cosmos-sdk.git
+[submodule "extra/cosmos-rust"]
+	path = extra/cosmos-rust
+	url = https://github.com/aiax-network/cosmos-rust
+[submodule "extra/wasmd"]
+	path = extra/wasmd
+	url = https://github.com/CosmWasm/wasmd
+[submodule "extra/ibc-go"]
+	path = extra/ibc-go
+	url = https://github.com/cosmos/ibc-go.git
+[submodule "extra/deep_space"]
+	path = extra/deep_space
+	url = https://github.com/aiax-network/deep_space
