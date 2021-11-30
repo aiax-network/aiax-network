@@ -10,9 +10,6 @@
 [submodule "extra/ibc-go"]
 	path = extra/ibc-go
 	url = https://github.com/cosmos/ibc-go.git
-[submodule "extra/deep_space"]
-	path = extra/deep_space
-	url = https://github.com/aiax-network/deep_space
 [submodule "extra/aiax-node"]
 	path = extra/aiax-node
 	url = https://github.com/aiax-network/aiax-node
