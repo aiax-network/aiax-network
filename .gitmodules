@@ -1,6 +1,3 @@
-[submodule "extra/gravity-bridge"]
-	path = extra/gravity-bridge
-	url = https://github.com/aiax-network/gravity-bridge
 [submodule "extra/cosmos-sdk"]
 	path = extra/cosmos-sdk
 	url = https://github.com/cosmos/cosmos-sdk.git
