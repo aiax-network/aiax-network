@@ -10,3 +10,6 @@
 [submodule "extra/aiax-node"]
 	path = extra/aiax-node
 	url = https://github.com/aiax-network/aiax-node
+[submodule "extra/gravity-bridge"]
+	path = extra/gravity-bridge
+	url = https://github.com/aiax-network/gravity-bridge.git
