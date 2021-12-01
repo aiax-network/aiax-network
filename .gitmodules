@@ -13,3 +13,15 @@
 [submodule "extra/gravity-bridge"]
 	path = extra/gravity-bridge
 	url = https://github.com/aiax-network/gravity-bridge.git
+[submodule "extra/cosmos-rust"]
+	path = extra/cosmos-rust
+	url = https://github.com/aiax-network/cosmos-rust.git
+[submodule "extra/ethermint"]
+	path = extra/ethermint
+	url = https://github.com/tharsis/ethermint.git
+[submodule "extra/deep_space"]
+	path = extra/deep_space
+	url = https://github.com/aiax-network/deep_space.git
+[submodule "extra/tendermint"]
+	path = extra/tendermint
+	url = https://github.com/tendermint/tendermint
