@@ -22,3 +22,6 @@
 [submodule "extra/tendermint"]
 	path = extra/tendermint
 	url = https://github.com/tendermint/tendermint
+[submodule "extra/deep_space"]
+	path = extra/deep_space
+	url = https://github.com/aiax-network/deep_space.git
