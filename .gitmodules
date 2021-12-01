@@ -19,9 +19,6 @@
 [submodule "extra/ethermint"]
 	path = extra/ethermint
 	url = https://github.com/tharsis/ethermint.git
-[submodule "extra/deep_space"]
-	path = extra/deep_space
-	url = https://github.com/aiax-network/deep_space.git
 [submodule "extra/tendermint"]
 	path = extra/tendermint
 	url = https://github.com/tendermint/tendermint
