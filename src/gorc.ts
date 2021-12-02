@@ -27,7 +27,7 @@ rpc = "http://localhost:8545"
 [cosmos]
 grpc = "http://localhost:9090"
 key_derivation_path = "m/44'/118'/0'/0/0"
-prefix = "ethm"
+prefix = "aiax"
 gas_price = { amount = 1000, denom = "aaiax" }
 `.trim();
 }
