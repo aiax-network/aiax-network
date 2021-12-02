@@ -12,7 +12,7 @@ const env = {
   loglevel: 'info',
   website: 'https://aiax.network',
   context: process.cwd(),
-  erthermintRoot: 'extra/ethermint',
+  nodeRoot: 'extra/aiax-node',
   gravityRoot: 'extra/gravity-bridge',
   aiaxRoot: path.resolve(homedir, '.aiax'),
   configRoot: path.resolve(homedir, '.aiax/config'),
@@ -44,7 +44,7 @@ function checkEnv() {
     return;
   }
   initialized = true;
-  ['erthermintRoot', 'gravityRoot'].forEach((p) => {
+  ['aiaxRoot', 'gravityRoot'].forEach((p) => {
     if (!path.isAbsolute(env[p])) {
       env[p] = path.resolve(env.context, env[p]);
     }

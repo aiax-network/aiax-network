@@ -21,12 +21,12 @@ export interface BuildOptions {
   debug?: boolean;
   targetRoot?: string;
   binariesDir?: string;
-  ethermint?: GoBuildOpts;
+  node?: GoBuildOpts;
   gravity?: ArgsBuildOpts; ///< Orcherstrator
 }
 
-async function gravityBuild(opts: BuildOptions): Promise<any> {
-  console.log('build | Building aiax orchstrator engine binary, it may take a while...');
+async function gravityBridgeBuild(opts: BuildOptions): Promise<any> {
+  console.log('build | Building aiax orchestrator engine binary, it may take a while...');
   const args = ['install', '--locked', '--no-track', '--force', '--root', opts.targetRoot, '--path', './gorc'];
   if (opts.debug) {
     args.push('--debug');
@@ -38,14 +38,14 @@ async function gravityBuild(opts: BuildOptions): Promise<any> {
   console.log(`build | Created ${path.resolve(opts.targetRoot, 'bin', 'gorc')}`);
 }
 
-async function ethermintBuild(opts: BuildOptions): Promise<any> {
-  console.log('build | Building aiax daemon binary');
-  const o = opts.ethermint;
+async function aiaxNodeBuild(opts: BuildOptions): Promise<any> {
+  console.log('build | Building aiax node binary');
+  const o = opts.node;
   if (o.version == null) {
     o.version = env.version;
   }
   if (o.githash == null) {
-    o.githash = await gitHash(env.erthermintRoot);
+    o.githash = await gitHash(env.nodeRoot);
   }
   const tags = (o.tags = o.tags || []);
   ['netgo', 'ledger'].forEach((t) => {
@@ -63,10 +63,10 @@ async function ethermintBuild(opts: BuildOptions): Promise<any> {
     `-X github.com/cosmos/cosmos-sdk/version.Version=${env.version}`,
     `-X github.com/cosmos/cosmos-sdk/version.Commit=${o.githash}`,
     `-X github.com/cosmos/cosmos-sdk/version.BuildTags=${tags.join(',')}`,
-    `-X github.com/tharsis/ethermint/app.DefaultNodeHome=${opts.targetRoot}`,
+    `-X github.com/aiax-network/aiax-node/app.DefaultNodeHome=${opts.targetRoot}`,
     `-X github.com/tendermint/tendermint/version.TMCoreSemVer=${await goPkgVersion(
       'github.com/tendermint/tendermint',
-      env.erthermintRoot
+      env.nodeRoot
     )}`,
   ].forEach((f) => {
     if (!hasElement(ldflags, f)) {
@@ -81,8 +81,8 @@ async function ethermintBuild(opts: BuildOptions): Promise<any> {
     args.push('-gcflags', 'all=-N -l');
   }
   const binary = path.resolve(opts.targetRoot, 'bin/aiax');
-  args.push('-tags', tags.join(' '), '-ldflags', ldflags.join(' '), '-o', binary, './cmd/ethermintd');
-  await processRun('go', args, { cwd: env.erthermintRoot });
+  args.push('-tags', tags.join(' '), '-ldflags', ldflags.join(' '), '-o', binary, './cmd/aiaxd');
+  await processRun('go', args, { cwd: env.nodeRoot });
   console.log(`build | Created ${binary}`);
 }
 
@@ -92,8 +92,8 @@ function createBuildOptions(opts: BuildOptions): BuildOptions {
     o.targetRoot = env.aiaxRoot;
   }
   o.binariesDir = path.resolve(o.targetRoot, 'bin');
-  if (o.ethermint == null) {
-    o.ethermint = {
+  if (o.node == null) {
+    o.node = {
       output: path.resolve(o.binariesDir, 'aiax'),
     };
   }
@@ -106,7 +106,7 @@ function createBuildOptions(opts: BuildOptions): BuildOptions {
 }
 
 async function buildCheck(opts: BuildOptions) {
-  [opts.ethermint.output, opts.gravity.output].forEach((p) => {
+  [opts.node.output, opts.gravity.output].forEach((p) => {
     if (!fs.existsSync(p)) {
       throw new Error(`Missing required binary artifact: ${p}`);
     }
@@ -122,7 +122,7 @@ async function build(opts_: BuildOptions): Promise<BuildOptions> {
     recursive: true,
   });
 
-  await Promise.all([ethermintBuild(opts), gravityBuild(opts)]);
+  await Promise.all([aiaxNodeBuild(opts), gravityBridgeBuild(opts)]);
   await buildCheck(opts);
   return opts;
 }
