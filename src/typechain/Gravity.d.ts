@@ -25,6 +25,7 @@ interface GravityInterface extends ethers.utils.Interface {
     "deployERC20(string,string,string,uint8)": FunctionFragment;
     "lastBatchNonce(address)": FunctionFragment;
     "lastLogicCallNonce(bytes32)": FunctionFragment;
+    "sendToAiax(address,bytes32,uint256)": FunctionFragment;
     "sendToCosmos(address,bytes32,uint256)": FunctionFragment;
     "state_gravityId()": FunctionFragment;
     "state_invalidationMapping(bytes32)": FunctionFragment;
@@ -51,6 +52,10 @@ interface GravityInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "lastLogicCallNonce",
     values: [BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "sendToAiax",
+    values: [string, BytesLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "sendToCosmos",
@@ -166,6 +171,7 @@ interface GravityInterface extends ethers.utils.Interface {
     functionFragment: "lastLogicCallNonce",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "sendToAiax", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "sendToCosmos",
     data: BytesLike
@@ -222,7 +228,7 @@ interface GravityInterface extends ethers.utils.Interface {
   events: {
     "ERC20DeployedEvent(string,address,string,string,uint8,uint256)": EventFragment;
     "LogicCallEvent(bytes32,uint256,bytes,uint256)": EventFragment;
-    "SendToCosmosEvent(address,address,bytes32,uint256,uint256)": EventFragment;
+    "SendToCosmosEvent(address,address,bytes32,uint256,uint256,string,string,uint8)": EventFragment;
     "TransactionBatchExecutedEvent(uint256,address,uint256)": EventFragment;
     "ValsetUpdatedEvent(uint256,uint256,address[],uint256[])": EventFragment;
   };
@@ -293,6 +299,20 @@ export class Gravity extends Contract {
     ): Promise<{
       0: BigNumber;
     }>;
+
+    sendToAiax(
+      _tokenContract: string,
+      _destination: BytesLike,
+      _amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<ContractTransaction>;
+
+    "sendToAiax(address,bytes32,uint256)"(
+      _tokenContract: string,
+      _destination: BytesLike,
+      _amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<ContractTransaction>;
 
     sendToCosmos(
       _tokenContract: string,
@@ -559,6 +579,20 @@ export class Gravity extends Contract {
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
+  sendToAiax(
+    _tokenContract: string,
+    _destination: BytesLike,
+    _amount: BigNumberish,
+    overrides?: Overrides
+  ): Promise<ContractTransaction>;
+
+  "sendToAiax(address,bytes32,uint256)"(
+    _tokenContract: string,
+    _destination: BytesLike,
+    _amount: BigNumberish,
+    overrides?: Overrides
+  ): Promise<ContractTransaction>;
+
   sendToCosmos(
     _tokenContract: string,
     _destination: BytesLike,
@@ -788,6 +822,20 @@ export class Gravity extends Contract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    sendToAiax(
+      _tokenContract: string,
+      _destination: BytesLike,
+      _amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    "sendToAiax(address,bytes32,uint256)"(
+      _tokenContract: string,
+      _destination: BytesLike,
+      _amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     sendToCosmos(
       _tokenContract: string,
       _destination: BytesLike,
@@ -1003,7 +1051,10 @@ export class Gravity extends Contract {
       _sender: string | null,
       _destination: BytesLike | null,
       _amount: null,
-      _eventNonce: null
+      _eventNonce: null,
+      _name: null,
+      _symbol: null,
+      _decimals: null
     ): EventFilter;
 
     TransactionBatchExecutedEvent(
@@ -1055,6 +1106,20 @@ export class Gravity extends Contract {
     "lastLogicCallNonce(bytes32)"(
       _invalidation_id: BytesLike,
       overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    sendToAiax(
+      _tokenContract: string,
+      _destination: BytesLike,
+      _amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<BigNumber>;
+
+    "sendToAiax(address,bytes32,uint256)"(
+      _tokenContract: string,
+      _destination: BytesLike,
+      _amount: BigNumberish,
+      overrides?: Overrides
     ): Promise<BigNumber>;
 
     sendToCosmos(
@@ -1287,6 +1352,20 @@ export class Gravity extends Contract {
     "lastLogicCallNonce(bytes32)"(
       _invalidation_id: BytesLike,
       overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    sendToAiax(
+      _tokenContract: string,
+      _destination: BytesLike,
+      _amount: BigNumberish,
+      overrides?: Overrides
+    ): Promise<PopulatedTransaction>;
+
+    "sendToAiax(address,bytes32,uint256)"(
+      _tokenContract: string,
+      _destination: BytesLike,
+      _amount: BigNumberish,
+      overrides?: Overrides
     ): Promise<PopulatedTransaction>;
 
     sendToCosmos(

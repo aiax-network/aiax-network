@@ -3,6 +3,7 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -60,7 +61,10 @@ contract Gravity is ReentrancyGuard {
 		address indexed _sender,
 		bytes32 indexed _destination,
 		uint256 _amount,
-		uint256 _eventNonce
+		uint256 _eventNonce,
+		string _name,
+		string _symbol,
+		uint8  _decimals
 	);
 	event ERC20DeployedEvent(
 		// FYI: Can't index on a string without doing a bunch of weird stuff
@@ -529,13 +533,29 @@ contract Gravity is ReentrancyGuard {
 	) public nonReentrant {
 		IERC20(_tokenContract).safeTransferFrom(msg.sender, address(this), _amount);
 		state_lastEventNonce = state_lastEventNonce.add(1);
+
+		string memory name = IERC20Metadata(_tokenContract).name();
+		string memory symbol = IERC20Metadata(_tokenContract).symbol();
+		uint8 decimals = IERC20Metadata(_tokenContract).decimals();
+
 		emit SendToCosmosEvent(
 			_tokenContract,
 			msg.sender,
 			_destination,
 			_amount,
-			state_lastEventNonce
+			state_lastEventNonce,
+			name,
+			symbol,
+			decimals
 		);
+	}
+
+	function sendToAiax(
+		address _tokenContract,
+		bytes32 _destination,
+		uint256 _amount
+	) public nonReentrant {
+		sendToCosmos(_tokenContract, _destination, _amount);
 	}
 
 	function deployERC20(
