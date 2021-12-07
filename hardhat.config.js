@@ -21,7 +21,7 @@ module.exports = {
     cache: './.cache',
   },
   solidity: {
-    version: '0.8.10',
+    version: '0.8.9',
     settings: {
       optimizer: {
         enabled: true,
