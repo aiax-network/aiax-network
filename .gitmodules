@@ -19,9 +19,10 @@
 [submodule "extra/deep_space"]
 	path = extra/deep_space
 	url = https://github.com/aiax-network/deep_space.git
-[submodule "extra/cosmos-sdk"]
-	path = extra/cosmos-sdk
-	url = https://github.com/cosmos/cosmos-sdk
 [submodule "extra/ethermint"]
 	path = extra/ethermint
 	url = https://github.com/tharsis/ethermint
+[submodule "extra/cosmos-sdk"]
+	path = extra/cosmos-sdk
+	url = https://github.com/aiax-network/cosmos-sdk
+	shallow = true

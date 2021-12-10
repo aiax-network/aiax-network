@@ -1,4 +1,5 @@
 npm run aiax -- testnode init -t -v
+~/.aiax/bin/aiax start
 npm run aiax -- eth testnode
 npm run aiax -- contract deploy --contracts=Gravity,ERC20TokenOne --eth-privkey=0xdf57089febbacf7ba0bc227dafbffa9fc08a93fdc68e1e42411a14efcf23656e --eth-supply-validator-balance=1
 ~/.aiax/bin/gorc -c ~/.aiax/config/gorc.toml orchestrator start --cosmos-key=testnodeorchestrator --ethereum-key=testnodevalidator_eth
