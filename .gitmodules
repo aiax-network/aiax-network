@@ -1,6 +1,3 @@
-[submodule "extra/cosmos-sdk"]
-	path = extra/cosmos-sdk
-	url = https://github.com/cosmos/cosmos-sdk.git
 [submodule "extra/wasmd"]
 	path = extra/wasmd
 	url = https://github.com/CosmWasm/wasmd
