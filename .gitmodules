@@ -22,3 +22,6 @@
 [submodule "extra/cosmos-sdk"]
 	path = extra/cosmos-sdk
 	url = https://github.com/cosmos/cosmos-sdk
+[submodule "extra/ethermint"]
+	path = extra/ethermint
+	url = https://github.com/tharsis/ethermint
