@@ -6,6 +6,13 @@ npm run aiax -- contract deploy --contracts=Gravity,ERC20TokenOne --eth-privkey=
 ~/.aiax/bin/gorc -c ~/.aiax/config/gorc.toml eth-to-cosmos 0xB581C9264f59BF0289fA76D61B2D0746dCE3C30D acc1 0x73511669fd4dE447feD18BB79bAFeAC93aB7F31f 2546bcd3c84621e976d8185a91a922ae77ecec30 10 1
 
 
+Endpoints: 
+
+grpcurl -plaintext localhost:9090 describe aiax.v1.Query
+grpcurl -plaintext -d '{"address":"0xB581C9264f59BF0289fA76D61B2D0746dCE3C30D"}' localhost:9090 aiax.v1.Query/ERC20Address
+curl -X GET -H "Content-Type: application/json" http://localhost:1317/aiax/v1/erc20/0xB581C9264f59BF0289fA76D61B2D0746dCE3C30D
+
+
 Reciever:
 0xbcd4042de499d14e55001ccbb24a551f3b954096 
 ethm1hn2qgt0yn8g5u4gqrn9myjj4ruae2sykadwm3x
