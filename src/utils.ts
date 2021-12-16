@@ -7,7 +7,20 @@ import type { Writable } from 'stream';
 import env from './env';
 import { promisify } from 'util';
 
+const jptr = require('json8-pointer');
+
 export const cloneDeep = rfdc();
+
+export function setJsonPath(obj: any, path: string, key: string, val: any) {
+  const v = jptr.find(obj, path);
+  if (v != null) {
+    v[key] = val;
+  }
+}
+
+export function getJsonPath(obj: any, path: string): any {
+  return jptr.find(obj, path);
+}
 
 export async function valueOrFile(val: string): Promise<string> {
   if (val.charAt(0) === '@') {

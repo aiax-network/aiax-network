@@ -6,10 +6,10 @@ import * as path from 'path';
 import rimraf from 'rimraf';
 import { aiaxConfigApply, aiaxKeyEnsure, aiaxKeyGetBechAddress, aiaxRun, aiaxRunGetOutput } from '../../aiax';
 import { buildEnsureBinaries } from '../../build';
+import { contractsDeploy } from '../../contract/deploy';
 import env, { denomBase } from '../../env';
 import { gorcConfigApply, gorcKeyEnsure, gorcKeyEthEnsure, gorcKeyImport, gorcSignDelegateKeys } from '../../gorc';
-
-const jptr = require('json8-pointer');
+import { getJsonPath, setJsonPath } from '../../utils';
 
 export interface NodeInitOpts {
   trunc?: boolean;
@@ -22,13 +22,6 @@ export interface NodeInitOpts {
   ethExternalRpcAddress?: string;
   gorcAccountAmount?: string;
   validatorAccountAmount?: string;
-}
-
-function setJsonPath(obj: any, path: string, key: string, val: any) {
-  const v = jptr.find(obj, path);
-  if (v != null) {
-    v[key] = val;
-  }
 }
 
 async function testNodeInitGenesis(): Promise<any> {
@@ -50,9 +43,7 @@ async function testNodeInitGenesis(): Promise<any> {
   setJsonPath(gen, '/app_state/staking/params', 'bond_denom', denom);
   setJsonPath(gen, '/consensus_params/block', 'max_gas', '10000000');
 
-  // TODO: Set erc20 to denoms
-
-  const dmd = jptr.find(gen, '/app_state/bank/denom_metadata') as any[];
+  const dmd = getJsonPath(gen, '/app_state/bank/denom_metadata') as any[];
   dmd.push({
     description: 'Aiax token',
     name: 'Aiax token',
@@ -155,7 +146,16 @@ async function testNodeInitConfig(opts: NodeInitOpts) {
   await aiaxRun(['config', 'keyring-backend', opts.keyringBackend || 'test']);
   await aiaxRun(['config', 'chain-id', env.chainId]);
   await testNodeInitGenesis();
+  await testNodeInitExternalContracts(opts);
   await testNodeGenTx(opts);
+}
+
+async function testNodeInitExternalContracts(opts: NodeInitOpts) {
+  await contractsDeploy({
+    contracts: 'ERC20AiaxToken,ERC20TokenOne',
+    ethNode: opts.ethExternalRpcAddress || 'http://localhost:8545',
+    ethPrivkey: '0xdf57089febbacf7ba0bc227dafbffa9fc08a93fdc68e1e42411a14efcf23656e',
+  });
 }
 
 async function testNodeGorcEthKeysImport() {
