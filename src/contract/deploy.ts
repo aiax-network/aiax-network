@@ -2,15 +2,15 @@ import { createProtobufRpcClient, QueryClient } from '@cosmjs/stargate';
 import { Tendermint34Client } from '@cosmjs/tendermint-rpc';
 import type { Command } from 'commander';
 import { BigNumber, Contract, ethers, Wallet } from 'ethers';
+import * as fs from 'fs';
 import hre from 'hardhat';
+import * as path from 'path';
 import { SignerSetTx } from '../../extra/gravity-bridge/solidity/gen/gravity/v1/gravity';
 import { Query, QueryClientImpl } from '../../extra/gravity-bridge/solidity/gen/gravity/v1/query';
 import env from '../env';
 import { gorcConfigApply, gorcEthKeyShow } from '../gorc';
 import { Gravity } from '../typechain';
-import { getJsonPath, setJsonPath, valueOrFile } from '../utils';
-import * as path from 'path';
-import * as fs from 'fs';
+import { setJsonPath, valueOrFile } from '../utils';
 
 interface DeployOpts {
   cosmosNode?: string;

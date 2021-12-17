@@ -1,11 +1,10 @@
+import childProcess, { ChildProcess } from 'child_process';
+import EventEmitter from 'events';
 import fs from 'fs';
-import childProcess from 'child_process';
-
 import rfdc from 'rfdc';
 import type { Writable } from 'stream';
-
-import env from './env';
 import { promisify } from 'util';
+import env from './env';
 
 const jptr = require('json8-pointer');
 
@@ -42,6 +41,85 @@ export function goPkgVersion(pkg: string, cwd?: string): Promise<string> {
 
 export function hasElement<T>(arr: T[], el: T): boolean {
   return arr.indexOf(el) !== -1;
+}
+
+export interface ProcessWrapperOptions {
+  tag?: string;
+  cwd?: string;
+  onStdout?: (data: any, emitter: EventEmitter) => any;
+  onStderr?: (data: any, emitter: EventEmitter) => any;
+  killIfNoEvents?: { event: string; timeout: number }[];
+}
+
+export class ProcessWrapper {
+  readonly tag: string;
+
+  readonly events = new EventEmitter();
+
+  readonly completion: Promise<number>;
+
+  readonly proc: ChildProcess;
+
+  completed?: number;
+
+  private noEvents = new Set<string>();
+
+  constructor(cmd: string, args: string[] = [], opts: ProcessWrapperOptions = {}) {
+    this.tag = opts.tag != null ? opts.tag : cmd;
+    const stdio = ['ignore', opts.onStdout ? 'pipe' : process.stdout, opts.onStderr ? 'pipe' : process.stderr] as any;
+    const proc = (this.proc = childProcess.spawn(cmd, args, {
+      stdio,
+      cwd: opts.cwd,
+    }));
+    if (opts.onStdout) {
+      proc.stdout.on('data', (data) => {
+        opts.onStdout(data, this.events);
+      });
+    }
+    if (opts.onStderr) {
+      proc.stderr.on('data', (data) => {
+        opts.onStderr(data, this.events);
+      });
+    }
+    this.completion = new Promise((resolve) => {
+      if (proc.exitCode != null) {
+        this.completed = proc.exitCode;
+        resolve(this.completed);
+      } else {
+        proc.once('exit', (code) => {
+          this.completed = code != null ? code : -1;
+          resolve(this.completed);
+        });
+        proc.once('error', () => {
+          this.completed = -1;
+          resolve(this.completed);
+        });
+      }
+    });
+    opts.killIfNoEvents?.forEach((ne) => this.registerKillNoEvent(ne.event, ne.timeout));
+  }
+
+  private registerKillNoEvent(event: string, timeout: number) {
+    if (this.noEvents.has(event)) {
+      return;
+    }
+    this.noEvents.add(event);
+  }
+
+  kill(signal: NodeJS.Signals = 'SIGINT', timeout = 3000, hardsignal: NodeJS.Signals = 'SIGKILL'): Promise<number> {
+    if (this.completed !== undefined) {
+      return Promise.resolve(this.completed);
+    }
+    this.proc.kill(signal);
+    if (timeout > 0) {
+      setTimeout(() => {
+        if (this.completed === undefined) {
+          this.proc.kill(hardsignal);
+        }
+      }, timeout);
+    }
+    return this.completion;
+  }
 }
 
 export interface RunProcessOpts {
