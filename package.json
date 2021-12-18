@@ -23,6 +23,7 @@
     "ethereum-waffle": "^3.4.0",
     "ethereumjs-wallet": "^1.0.1",
     "ethers": "^5.4.7",
+    "fs-extra": "^10.0.0",
     "hardhat": "^2.6.4",
     "hardhat-gas-reporter": "^1.0.4",
     "hardhat-typechain": "^0.3.5",
@@ -31,11 +32,11 @@
     "json8-merge-patch": "^1.0.5",
     "json8-patch": "^1.0.6",
     "json8-pointer": "^1.0.6",
+    "mitt": "^3.0.0",
     "rfdc": "^1.3.0",
     "rimraf": "^3.0.2",
     "ts-node": "^10.2.1",
     "tslib": "^2.3.1",
-    "typescript": "^4.4.3",
-    "fs-extra": "^10.0.0"
+    "typescript": "^4.4.3"
   }
 }

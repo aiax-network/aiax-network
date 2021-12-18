@@ -3,7 +3,8 @@ import * as path from 'path';
 
 import env from '../env';
 import type { Command } from 'commander';
-import { cloneDeep, gitHash, goPkgVersion, hasElement, processRun } from '../utils';
+import { cloneDeep, gitHash, goPkgVersion, hasElement } from '../utils';
+import { processRun } from '../proc';
 
 export interface ArgsBuildOpts {
   output?: string;

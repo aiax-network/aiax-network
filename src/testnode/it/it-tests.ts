@@ -1,9 +1,13 @@
 import { Command } from 'commander';
-import { ProcessWrapper } from '../../utils';
+import { ProcessWrapper } from '../../proc';
 
 const procs = new Array<ProcessWrapper>();
 
-async function doIt() {}
+async function doIt() {
+
+
+
+}
 
 async function teardown() {
   for (let i = procs.length - 1; i >= 0; --i) {

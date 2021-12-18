@@ -1,9 +1,9 @@
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
 import { promisify } from 'util';
 import env from './env';
-import { processRun, processRunGetOutput, RunProcessOpts } from './utils';
-import {tomlApply} from './toml';
+import { processRun, processRunGetOutput, RunProcessOpts } from './proc';
+import { tomlApply } from './toml';
 
 const fsStat = promisify(fs.stat);
 

@@ -1,7 +1,7 @@
 import * as path from 'path';
 import env from './env';
 import {tomlApply} from './toml';
-import { processRun, processRunGetOutput, RunProcessOpts } from './utils';
+import { processRun, processRunGetOutput, RunProcessOpts } from './proc';
 
 export async function aiaxConfigApply(apply: any) {
   await tomlApply(path.resolve(env.configRoot, 'app.toml'), apply);
