@@ -1,11 +1,16 @@
 import { Command } from 'commander';
-import { ProcessWrapper } from '../../proc';
+import { processRun, ProcessWrapper } from '../../proc';
 
 const procs = new Array<ProcessWrapper>();
 
+
+async function ethRun() {
+  // processRun("");
+}
+
+
 async function doIt() {
-
-
+  
 
 }
 
