@@ -95,14 +95,14 @@ export class ProcessWrapper {
 
   private abortEventWaiters() {
     for (const [_, v] of this.eventWaiters) {
-      v.forEach((r) => r[1]('process is not active'));
+      v.forEach((r) => r[1](`process ${this.tag} exited with code: ${this.completed ?? -1}`));
     }
     this.eventWaiters.clear();
   }
 
   waitForEvent(event: string): Promise<void> {
     if (this.completed !== undefined) {
-      return Promise.reject('process is not active');
+      return Promise.reject(`process ${this.tag} exited with code: ${this.completed}`);
     }
     return new Promise((resolve, reject) => {
       let entry = this.eventWaiters.get(event);
