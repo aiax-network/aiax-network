@@ -11,6 +11,10 @@ export interface ProcessWrapperOptions {
   killIfNoEvents?: { event: string; timeout: number }[];
 }
 
+type ResolveFn = (arg?: any) => void;
+type RejectFn = ResolveFn;
+type ResolveReject = [ResolveFn, RejectFn];
+
 export class ProcessWrapper {
   readonly tag: string;
 
@@ -23,6 +27,8 @@ export class ProcessWrapper {
   completed?: number;
 
   private noEvents = new Set<string>();
+
+  private eventWaiters = new Map<string, ResolveReject[]>();
 
   constructor(cmd: string, args: string[] = [], opts: ProcessWrapperOptions = {}) {
     this.tag = opts.tag != null ? opts.tag : cmd;
@@ -44,14 +50,17 @@ export class ProcessWrapper {
     this.completion = new Promise((resolve) => {
       if (proc.exitCode != null) {
         this.completed = proc.exitCode;
+        this.abortEventWaiters();
         resolve(this.completed);
       } else {
         proc.once('exit', (code) => {
           this.completed = code != null ? code : -1;
+          this.abortEventWaiters();
           resolve(this.completed);
         });
         proc.once('error', () => {
           this.completed = -1;
+          this.abortEventWaiters();
           resolve(this.completed);
         });
       }
@@ -60,7 +69,13 @@ export class ProcessWrapper {
     if (opts.killIfNoEvents) {
       opts.killIfNoEvents.forEach((ne) => this.registerKillNoEvent(ne.event, ne.timeout));
       this.events.on('*', (type) => {
-        this.noEvents.delete(type.toString());
+        type = type.toString();
+        this.noEvents.delete(type);
+        const ew = this.eventWaiters.get(type);
+        if (ew) {
+          this.eventWaiters.delete(type);
+          ew.forEach((r) => r[0]());
+        }
       });
     }
   }
@@ -72,9 +87,32 @@ export class ProcessWrapper {
     this.noEvents.add(event);
     setTimeout(() => {
       if (this.noEvents.has(event)) {
+        console.warn(`Killing ${this.tag}:${this.proc.pid} due to absence of ${event} event`);
         this.kill();
       }
-    }, timeout);        
+    }, timeout);
+  }
+
+  private abortEventWaiters() {
+    for (const [_, v] of this.eventWaiters) {
+      v.forEach((r) => r[1]('process is not active'));
+    }
+    this.eventWaiters.clear();
+  }
+
+  waitForEvent(event: string): Promise<void> {
+    if (this.completed !== undefined) {
+      return Promise.reject('process is not active');
+    }
+    return new Promise((resolve, reject) => {
+      let entry = this.eventWaiters.get(event);
+      if (entry == null) {
+        entry = [[resolve, reject]];
+        this.eventWaiters.set(event, entry);
+      } else {
+        entry.push([resolve, reject]);
+      }
+    });
   }
 
   kill(signal: NodeJS.Signals = 'SIGINT', timeout = 3000, hardsignal: NodeJS.Signals = 'SIGKILL'): Promise<number> {
@@ -85,6 +123,7 @@ export class ProcessWrapper {
     if (timeout > 0) {
       setTimeout(() => {
         if (this.completed === undefined) {
+          console.warn(`Killing ${this.tag}${this.proc.pid} by hard kill signal ${hardsignal}`);
           this.proc.kill(hardsignal);
         }
       }, timeout);

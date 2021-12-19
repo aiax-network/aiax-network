@@ -5,7 +5,7 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "aiax": "TS_NODE_FILES=true ts-node src/index.ts"
+    "aiax": "node dist/src/index.js"
   },
   "devDependencies": {
     "@cosmjs/stargate": "^0.26.1",
@@ -19,6 +19,7 @@
     "@types/rimraf": "^3.0.2",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "chai": "^4.3.4",
+    "colors": "^1.4.0",
     "commander": "^8.2.0",
     "ethereum-waffle": "^3.4.0",
     "ethereumjs-wallet": "^1.0.1",
