@@ -11,3 +11,6 @@ interface AccountKey {
 interface EthKey extends AccountKey {}
 
 interface CosmosKey extends AccountKey {}
+
+type ParsedKey = Array<string>;
+

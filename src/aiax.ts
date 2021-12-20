@@ -30,6 +30,18 @@ export async function aiaxKeyEnsure(name: string, backend = 'test'): Promise<Cos
   return ret;
 }
 
+export async function aiaxKeyParse(value: string): Promise<ParsedKey> {
+  const data = JSON.parse(await aiaxRunGetOutput(['keys', 'parse', value, '--output', 'json']));
+  if (typeof data.bytes === 'string') {
+    return ['0x' + data.bytes];
+  } else if (Array.isArray(data.formats)) {
+    return [...data.formats];
+  } else {
+    return Promise.reject('Unexpected response');
+  }
+}
+
+
 export async function aiaxKeyGetBechAddress(name: string, bech: KeyBech, backend = 'test'): Promise<string> {
   const key = JSON.parse(await aiaxRunGetOutput(['keys', 'show', name, '--bech', bech, '--output', 'json']));
   return key.address;

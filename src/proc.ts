@@ -100,22 +100,46 @@ export class ProcessWrapper {
     this.eventWaiters.clear();
   }
 
-  waitForEvent(event: string): Promise<void> {
+  waitForEvent(event: string, timeout: number = 0): Promise<void> {
     if (this.completed !== undefined) {
       return Promise.reject(`process ${this.tag} exited with code: ${this.completed}`);
     }
     return new Promise((resolve, reject) => {
+      let completed = false;
       let entry = this.eventWaiters.get(event);
+
+      const myResolve = (value: any) => {
+        if (!completed) {
+          completed = true;
+          resolve(value);
+        }
+      };
+      const myReject = (value: any) => {
+        if (!completed) {
+          completed = true;
+          reject(value);
+        }
+      };
+
       if (entry == null) {
-        entry = [[resolve, reject]];
+        entry = [[myResolve, myReject]];
         this.eventWaiters.set(event, entry);
       } else {
-        entry.push([resolve, reject]);
+        entry.push([myResolve, myReject]);
+      }
+
+      if (timeout > 0) {
+        setTimeout(() => {
+          if (!completed) {
+            reject(`${this.tag}:${this.proc.pid} wait for event: '${event}' timeout`);
+          }
+        }, timeout);
       }
     });
   }
 
   kill(signal: NodeJS.Signals = 'SIGINT', timeout = 3000, hardsignal: NodeJS.Signals = 'SIGKILL'): Promise<number> {
+    console.log(`${signal} ${this.tag}:${this.proc.pid}`);
     if (this.completed !== undefined) {
       return Promise.resolve(this.completed);
     }
@@ -123,7 +147,7 @@ export class ProcessWrapper {
     if (timeout > 0) {
       setTimeout(() => {
         if (this.completed === undefined) {
-          console.warn(`Killing ${this.tag}${this.proc.pid} by hard kill signal ${hardsignal}`);
+          console.warn(`Killing ${this.tag}:${this.proc.pid} by hard kill signal ${hardsignal}`);
           this.proc.kill(hardsignal);
         }
       }, timeout);

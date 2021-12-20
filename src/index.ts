@@ -7,7 +7,7 @@ import testnodeCmd from './testnode';
 
 
 process.on('unhandledRejection', (err) => {
-  console.error(err);
+  console.error('Error:', err);
   process.exit(1);
 });
 
