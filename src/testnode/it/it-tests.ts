@@ -54,6 +54,11 @@ function aiaxNodeStart(): ProcessWrapper {
   const proc = new ProcessWrapper(path.join(env.binRoot, 'aiax'), ['start'], {
     tag: 'aiax',
     killIfNoEvents: [{ event: 'started', timeout: 10000 }],
+    onStdout: (data) => {
+      if (env.verbose) {
+        process.stdout.write(data);
+      }
+    },
     onStderr: (() => {
       let started = false;
       return function (data, emitter) {
@@ -113,6 +118,11 @@ function orchestratorRun(): ProcessWrapper {
     {
       tag: 'orchestrator',
       killIfNoEvents: [{ event: 'started', timeout: 30000 }],
+      onStderr: (data) => {
+        if (env.verbose) {
+          process.stderr.write(data);
+        }
+      },
       onStdout: (() => {
         let started = false;
         return function (data, emitter) {
@@ -196,7 +206,7 @@ async function testSendExternalTokenToAiax() {
 }
 
 async function testSendAiaxTokenToNative() {
-  console.log(colors.cyan('Test send erc20 Aiax staking token to aiax...'));
+  console.log(colors.cyan('* Test send erc20 Aiax staking token to aiax...'));
   currentReciever = (await aiaxKeyEnsure('testSendAiaxTokenToNative')).address;
   const ethAddress = (await aiaxKeyParse(currentReciever))[0];
 
@@ -228,7 +238,7 @@ async function testSendAiaxTokenToNative() {
   assert.equal(balance.denom, 'aiax');
   assert.equal(balance.amount, '10');
 
-  console.log(colors.cyan('Test send erc20 Aiax staking token to aiax... Done.'));
+  console.log(colors.cyan('* Test send erc20 Aiax staking token to aiax... Done.'));
 }
 
 async function doTests() {
