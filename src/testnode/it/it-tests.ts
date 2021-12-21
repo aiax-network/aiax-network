@@ -15,6 +15,16 @@ let currentReciever = '';
 const aiaxTokenAddress = '0x73511669fd4dE447feD18BB79bAFeAC93aB7F31f';
 const sendToCosmosTimeout = 2 * 60 * 1000;
 
+interface ITOptions {
+  keepRunning: boolean;
+}
+
+function defaultOptions(): ITOptions {
+  return {
+    keepRunning: false,
+  };
+}
+
 function procByTag(tag: string): ProcessWrapper {
   const res = procs.find((p) => p.tag === tag);
   if (res === undefined) {
@@ -246,7 +256,10 @@ async function doTests() {
   await testSendAiaxTokenToNative();
 }
 
-async function doIt(): Promise<any> {
+async function doIt(opts: ITOptions): Promise<any> {
+  if (env.verbose) {
+    console.log('doIt', opts);
+  }
   try {
     await ethRun().waitForEvent('started');
     console.log(colors.green('* Local Ethereum node started'));
@@ -275,7 +288,10 @@ async function doIt(): Promise<any> {
 
     await doTests();
 
-    //await procs[procs.length - 1].completion;
+    if (opts.keepRunning) {
+      console.log(colors.yellow(`All started services: ${procs.map((p) => p.tag)}  will continue running...`));
+      await procByTag('aiax').completion;
+    }
   } finally {
     await teardown().catch((e) => console.error(e));
   }
@@ -302,5 +318,6 @@ module.exports = function (command: Command) {
   command
     .command('it')
     .description('Perform Aiax network integration tests')
-    .action((_) => doIt());
+    .option('-k, --keep-running', 'Keep all processes running after tests completion.', false)
+    .action((opts) => doIt({ ...defaultOptions(), ...opts }));
 };
