@@ -11,7 +11,9 @@ const index = './dist/src/index.js';
 const node = 'node';
 const procs = new Array<ProcessWrapper>();
 
-let currentAiaxKey = '';
+let currentReciever = '';
+const aiaxTokenAddress = '0x73511669fd4dE447feD18BB79bAFeAC93aB7F31f';
+const sendToCosmosTimeout = 2 * 60 * 1000;
 
 function procByTag(tag: string): ProcessWrapper {
   const res = procs.find((p) => p.tag === tag);
@@ -62,8 +64,14 @@ function aiaxNodeStart(): ProcessWrapper {
         if (!started && data.indexOf('executed block') !== -1) {
           started = true;
           emitter.emit('started');
-        } else if (data.indexOf(`Minted 10 on ${currentAiaxKey}`) !== -1) {
+        } else if (data.indexOf(`Minted 10 on ${currentReciever}`) !== -1) {
           emitter.emit('minted10');
+        } else if (
+          data.indexOf(
+            `SendToCosmos completed, coins: 10aiax contract: ${aiaxTokenAddress} reciever: ${currentReciever} minted: true`
+          ) !== -1
+        ) {
+          emitter.emit('minted10aiax');
         }
       };
     })(),
@@ -117,7 +125,7 @@ function orchestratorRun(): ProcessWrapper {
             emitter.emit('started');
           } else if (
             data.indexOf(
-              `Oracle observed deposit with ethereum sender 0x70997970C51812dc3A010C7d01b50e0d17dc79C8, cosmos_reciever ${currentAiaxKey}, amount 10`
+              `Oracle observed deposit with ethereum sender 0x70997970C51812dc3A010C7d01b50e0d17dc79C8, cosmos_reciever ${currentReciever}, amount 10`
             ) !== -1
           ) {
             emitter.emit('deposit10');
@@ -132,8 +140,8 @@ function orchestratorRun(): ProcessWrapper {
 
 async function testSendExternalTokenToAiax() {
   console.log(colors.cyan('* Test send external erc20 token to aiax...'));
-  currentAiaxKey = (await aiaxKeyEnsure('testSendExternalToken')).address;
-  const ethAddress = (await aiaxKeyParse(currentAiaxKey))[0];
+  currentReciever = (await aiaxKeyEnsure('testSendExternalToken')).address;
+  const ethAddress = (await aiaxKeyParse(currentReciever))[0];
 
   const tokenOneAddress = '0xB581C9264f59BF0289fA76D61B2D0746dCE3C30D';
   const code = await new ProcessWrapper(path.join(env.binRoot, 'gorc'), [
@@ -149,10 +157,9 @@ async function testSendExternalTokenToAiax() {
   ]).completion;
   assert.equal(code, 0, 'Send to cosmos exit code');
 
-  const timeout = 2 * 60 * 1000;
   await Promise.all([
-    procByTag('orchestrator').waitForEvent('deposit10', timeout),
-    procByTag('aiax').waitForEvent('minted10', timeout),
+    procByTag('orchestrator').waitForEvent('deposit10', sendToCosmosTimeout),
+    procByTag('aiax').waitForEvent('minted10', sendToCosmosTimeout),
   ]);
 
   const mappedAddress = JSON.parse(
@@ -190,12 +197,8 @@ async function testSendExternalTokenToAiax() {
 
 async function testSendAiaxTokenToNative() {
   console.log(colors.cyan('Test send erc20 Aiax staking token to aiax...'));
-  const aiaxTokenAddress = '0x73511669fd4dE447feD18BB79bAFeAC93aB7F31f';
-  currentAiaxKey = (await aiaxKeyEnsure('testSendAiaxTokenToNative')).address;
-  const ethAddress = (await aiaxKeyParse(currentAiaxKey))[0];
-
-  // TODO: remove
-  env.verbose = true;
+  currentReciever = (await aiaxKeyEnsure('testSendAiaxTokenToNative')).address;
+  const ethAddress = (await aiaxKeyParse(currentReciever))[0];
 
   const code = await new ProcessWrapper(path.join(env.binRoot, 'gorc'), [
     '-c',
@@ -210,11 +213,26 @@ async function testSendAiaxTokenToNative() {
   ]).completion;
   assert.equal(code, 0, 'Send to cosmos exit code');
 
+  await procByTag('aiax').waitForEvent('minted10aiax', sendToCosmosTimeout);
+
+  const balance = JSON.parse(
+    await processRunGetOutput('grpcurl', [
+      '-plaintext',
+      '-d',
+      `{"address":"${currentReciever}","denom":"aiax"}`,
+      'localhost:9090',
+      'cosmos.bank.v1beta1.Query/Balance',
+    ])
+  )['balance'];
+  assert.equal(typeof balance, 'object');
+  assert.equal(balance.denom, 'aiax');
+  assert.equal(balance.amount, '10');
+
   console.log(colors.cyan('Test send erc20 Aiax staking token to aiax... Done.'));
 }
 
 async function doTests() {
-  //await testSendExternalTokenToAiax();
+  await testSendExternalTokenToAiax();
   await testSendAiaxTokenToNative();
 }
 
@@ -247,7 +265,7 @@ async function doIt(): Promise<any> {
 
     await doTests();
 
-    await procs[procs.length - 1].completion;
+    //await procs[procs.length - 1].completion;
   } finally {
     await teardown().catch((e) => console.error(e));
   }
