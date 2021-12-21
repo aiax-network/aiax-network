@@ -26,6 +26,3 @@
 	path = extra/cosmos-sdk
 	url = https://github.com/aiax-network/cosmos-sdk
 	shallow = true
-[submodule "extra/expedition"]
-	path = extra/expedition
-	url = https://github.com/aiax-network/expedition
