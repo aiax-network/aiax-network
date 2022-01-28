@@ -1,0 +1,46 @@
+# When building pass docker args to set right aiax-node version and githash in cosmos-sdk settings
+
+ARG VERSION dev
+ARG GITHASH dev
+
+# Step 1: prepare golang alpine image to have all necessary tools
+FROM golang:1.17-alpine as builder
+RUN apk add gcc musl-dev linux-headers
+
+
+# Step 2: add go.mod and go.sum files and download dependencies for docker layers cache
+WORKDIR /app
+COPY ./cosmos-sdk/go.mod ./cosmos-sdk/go.sum ./cosmos-sdk/
+COPY ./gravity-bridge/module/go.mod ./gravity-bridge/module/go.sum ./gravity-bridge/module/
+COPY ./aiax-node/go.mod ./aiax-node/go.sum ./aiax-node/
+RUN cd aiax-node && go mod download -x
+
+
+# Step 3: copy source code that is needed to build a node
+WORKDIR /app
+COPY ./cosmos-sdk cosmos-sdk
+COPY ./gravity-bridge/module gravity-bridge/module
+COPY ./aiax-node aiax-node
+
+
+# Step 4: build aiaxd
+WORKDIR /app/aiax-node
+RUN export TM_CORE_SEM_VER=$(go list -m github.com/tendermint/tendermint | grep -oE "v.+") && \
+    go build \
+        -trimpath -tags "netgo ledger" \
+        -ldflags "-s -w \
+            -X github.com/cosmos/cosmos-sdk/version.Name=aiax \
+            -X github.com/cosmos/cosmos-sdk/version.AppName=aiax \
+            -X github.com/cosmos/cosmos-sdk/version.Version=$VERSION \
+            -X github.com/cosmos/cosmos-sdk/version.Commit=$GITHASH \
+            -X github.com/cosmos/cosmos-sdk/version.BuildTags=netgo,ledger \
+            -X github.com/aiax-network/aiax-node/app.DefaultNodeHome=/aiax \
+            -X github.com/tendermint/tendermint/version.TMCoreSemVer=dev \
+        " -o ./aiaxd ./cmd/aiaxd
+
+
+# Step 5: copy build artifact to the final image
+FROM alpine as runtime
+WORKDIR /aiax
+COPY --from=builder /app/aiax-node/aiaxd .
+CMD ./aiaxd

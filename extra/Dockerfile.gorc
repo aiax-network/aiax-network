@@ -1,0 +1,63 @@
+# Reference: https://www.lpalmieri.com/posts/fast-rust-docker-builds/
+
+
+# Used base images (recommended to be based on one distro):
+# - rust version 1.58.1 based on debian:bullseye (debian 11)
+# - debian:bullseye
+
+
+# Step 1: prepare cached layers and common base image
+FROM rust:1.58.1-bullseye as cargo-chef-rust
+# Install cargo-chef and cache layer. Recommended to pin it's version `--version X.X.X` to ensure a reproducible build
+RUN cargo install cargo-chef
+# Also pin used toolchain to ignore `rust-toolchain` file for different projects and avoid downloading multiple toolchains
+ENV RUSTUP_TOOLCHAIN=1.58.1
+
+
+# Step 2: prepare copied sources for future use (to avoid copying code)
+FROM cargo-chef-rust as sources
+WORKDIR /app
+COPY ./cosmos-rust cosmos-rust
+COPY ./deep_space deep_space
+COPY ./gravity-bridge gravity-bridge
+
+
+# Step 3: prepare recipes to build dependencies only one instead of rebuilding them every change of code
+FROM sources as planner
+RUN cd ./cosmos-rust/cosmos-sdk-proto && cargo chef prepare --recipe-path recipe.json
+RUN cd ./deep_space                   && cargo chef prepare --recipe-path recipe.json
+RUN cd ./gravity-bridge/orchestrator  && cargo chef prepare --recipe-path recipe.json
+
+
+# Step 4: build dependencies using recipes and cache them (since we are not using source code they will be rebuilded only on deps change)
+FROM cargo-chef-rust as cacher
+
+WORKDIR /app/cosmos-rust/cosmos-sdk-proto
+COPY --from=planner /app/cosmos-rust/cosmos-sdk-proto/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+
+WORKDIR /app/deep_space
+COPY --from=planner /app/deep_space/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+
+WORKDIR /app/gravity-bridge/orchestrator
+COPY --from=planner /app/gravity-bridge/orchestrator/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+
+
+# Step 5: build actual gorc target
+FROM sources as builder
+
+COPY --from=cacher /app/cosmos-rust/cosmos-sdk-proto/target /app/cosmos-rust/cosmos-sdk-proto/target
+COPY --from=cacher /app/deep_space/target /app/deep_space/target
+
+WORKDIR /app/gravity-bridge/orchestrator
+COPY --from=cacher /app/gravity-bridge/orchestrator/target target
+RUN cargo build --release --bin gorc
+
+
+# Step 6: copy build artifact to the final image
+FROM debian:bullseye-slim as runtime
+WORKDIR /aiax
+COPY --from=builder /app/gravity-bridge/orchestrator/target/release/gorc .
+CMD ./gorc

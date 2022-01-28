@@ -1,0 +1,11 @@
+version: "3.8"
+services:
+  gorc:
+    build:
+      context: ./extra/
+      dockerfile: ./Dockerfile.gorc
+
+  aiaxd:
+    build:
+      context: ./extra/
+      dockerfile: ./Dockerfile.aiaxd
