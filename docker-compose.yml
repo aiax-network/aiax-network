@@ -4,8 +4,28 @@ services:
     build:
       context: ./extra/
       dockerfile: ./Dockerfile.gorc
+    command: ./gorc -c /aiax/data/config.toml orchestrator start --cosmos-key=orchestrator --ethereum-key=signer
+    volumes:
+      - ./data/local/gorc:/aiax/data
+    restart: always
 
   aiaxd:
     build:
       context: ./extra/
       dockerfile: ./Dockerfile.aiaxd
+    command: ./aiaxd --home /aiax/data start
+    ports:
+      - 9545:8545
+      - 26657:26657
+    volumes:
+      - ./data/local/aiaxd:/aiax/data
+    restart: always
+
+  eth:
+    image: ethereum/client-go:stable
+    command: --goerli --http --http.addr=0.0.0.0 --http.vhosts=* --syncmode light
+    ports:
+      - 8545:8545
+    volumes:
+      - ./data/local/eth:/root/.ethereum
+    restart: always
