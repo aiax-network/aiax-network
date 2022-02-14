@@ -83,10 +83,10 @@ function aiaxNodeStart(): ProcessWrapper {
           emitter.emit('minted10');
         } else if (
           data.indexOf(
-            `SendToCosmos completed, coins: 10aiax contract: ${aiaxTokenAddress} reciever: ${currentReciever} minted: true`
+            `SendToCosmos completed, coins: 10aaiax contract: ${aiaxTokenAddress} reciever: ${currentReciever} minted: true`
           ) !== -1
         ) {
-          emitter.emit('minted10aiax');
+          emitter.emit('minted10aaiax');
         }
       };
     })(),
@@ -233,19 +233,19 @@ async function testSendAiaxTokenToNative() {
   ]).completion;
   assert.equal(code, 0, 'Send to cosmos exit code');
 
-  await procByTag('aiax').waitForEvent('minted10aiax', sendToCosmosTimeout);
+  await procByTag('aiax').waitForEvent('minted10aaiax', sendToCosmosTimeout);
 
   const balance = JSON.parse(
     await processRunGetOutput('grpcurl', [
       '-plaintext',
       '-d',
-      `{"address":"${currentReciever}","denom":"aiax"}`,
+      `{"address":"${currentReciever}","denom":"aaiax"}`,
       'localhost:9090',
       'cosmos.bank.v1beta1.Query/Balance',
     ])
   )['balance'];
   assert.equal(typeof balance, 'object');
-  assert.equal(balance.denom, 'aiax');
+  assert.equal(balance.denom, 'aaiax');
   assert.equal(balance.amount, '10');
 
   console.log(colors.cyan('* Test send erc20 Aiax staking token to aiax... Done.'));
