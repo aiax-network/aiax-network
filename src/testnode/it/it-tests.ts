@@ -5,7 +5,8 @@ import colors from 'colors';
 import { Command } from 'commander';
 import env from '../../env';
 import { processRunGetOutput, ProcessWrapper } from '../../proc';
-import { aiaxKeyEnsure, aiaxKeyParse } from '../../aiax';
+import { aiaxKeyEnsure, aiaxKeyParse, aiaxRun } from '../../aiax';
+import { gorcKeyEthEnsure } from '../../gorc';
 
 const index = './dist/src/index.js';
 const node = 'node';
@@ -251,9 +252,59 @@ async function testSendAiaxTokenToNative() {
   console.log(colors.cyan('* Test send erc20 Aiax staking token to aiax... Done.'));
 }
 
+async function testSendNativeToAiaxToken() {
+  console.log(colors.cyan('* Test send aiax to erc20 Aiax staking token...'));
+
+  let ethAddress = (await gorcKeyEthEnsure('testSendNativeToAiaxToken')).address;
+
+  // Check balance before sending
+  const balance_before = (
+    await processRunGetOutput('eth', [
+      'contract:call',
+      '--network=http://localhost:8545',
+      `erc20@${aiaxTokenAddress}`,
+      `balanceOf("${ethAddress}")`,
+    ])
+  ).trim();
+  assert.equal(balance_before, '0');
+
+  const code = await new ProcessWrapper(path.join(env.binRoot, 'gorc'), [
+    '-c',
+    path.join(env.configRoot, 'gorc.toml'),
+    'cosmos-to-eth',
+    'aaiax',
+    '5',
+    'acc3',
+    ethAddress,
+    '1',
+  ]).completion;
+  assert.equal(code, 0, 'Send to cosmos exit code');
+
+  // Check balance after sending
+  let balance_after = '0';
+  for (let i = 0; i < 60; i++) {
+    await new Promise((resolve, _) => setTimeout(resolve, 1000));
+    balance_after = (
+      await processRunGetOutput('eth', [
+        'contract:call',
+        '--network=http://localhost:8545',
+        `erc20@${aiaxTokenAddress}`,
+        `balanceOf("${ethAddress}")`,
+      ])
+    ).trim();
+    if (balance_after != balance_before) {
+      break;
+    }
+  }
+  assert.equal(balance_after, '5');
+
+  console.log(colors.cyan('* Test send aiax to erc20 Aiax staking token... Done.'));
+}
+
 async function doTests() {
   await testSendExternalTokenToAiax();
   await testSendAiaxTokenToNative();
+  await testSendNativeToAiaxToken();
 }
 
 async function doIt(opts: ITOptions): Promise<any> {
@@ -270,6 +321,9 @@ async function doIt(opts: ITOptions): Promise<any> {
     } else {
       console.log(colors.green('* Aiax testnode initialized'));
     }
+
+    // Add some aaiax to gorc testing acc3
+    await aiaxRun(['add-genesis-account', 'aiax1y3fgntsaf2cmylsnu3880g7wp6aj73zuc6hlwy', '1000000000000000000aaiax']);
 
     console.log(colors.green('* Aiax node starting...'));
     await aiaxNodeStart().waitForEvent('started');
