@@ -5,7 +5,9 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "aiax": "node dist/src/index.js"
+    "aiax": "node dist/src/index.js",
+    "build:code": "tsc",
+    "build:contracts": "hardhat compile"
   },
   "devDependencies": {
     "@cosmjs/stargate": "^0.26.1",
@@ -21,6 +23,7 @@
     "chai": "^4.3.4",
     "colors": "^1.4.0",
     "commander": "^8.2.0",
+    "eth-cli": "^2.0.2",
     "ethereum-waffle": "^3.4.0",
     "ethereumjs-wallet": "^1.0.1",
     "ethers": "^5.4.7",

@@ -159,6 +159,21 @@ function orchestratorRun(): ProcessWrapper {
   return proc;
 }
 
+async function depositTestTokens() {
+  // Deposit some erc20 aiax token to grevity bridge from testing account 4
+  console.log(await processRunGetOutput('eth', [
+    'contract:send',
+    '--network=http://localhost:8545',
+    `--pk=${"0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a"}`,
+    '--confirmation-blocks=3',
+    `erc20@${aiaxTokenAddress}`,
+    `transfer("${"0xC469e7aE4aD962c30c7111dc580B4adbc7E914DD"}", "57896044618658097711785492504343953926634992332820282019728792003956564819968")`,
+  ]));
+
+  // Add some aaiax to gorc testing acc3
+  await aiaxRun(['add-genesis-account', 'aiax1y3fgntsaf2cmylsnu3880g7wp6aj73zuc6hlwy', '1000000000000000000aaiax']);
+}
+
 async function testSendExternalTokenToAiax() {
   console.log(colors.cyan('* Test send external erc20 token to aiax...'));
   currentReciever = (await aiaxKeyEnsure('testSendExternalToken')).address;
@@ -273,7 +288,7 @@ async function testSendNativeToAiaxToken() {
     path.join(env.configRoot, 'gorc.toml'),
     'cosmos-to-eth',
     'aaiax',
-    '5',
+    '1000000000',
     'acc3',
     ethAddress,
     '1',
@@ -296,7 +311,7 @@ async function testSendNativeToAiaxToken() {
       break;
     }
   }
-  assert.equal(balance_after, '5');
+  assert.equal(balance_after, '1000000000');
 
   console.log(colors.cyan('* Test send aiax to erc20 Aiax staking token... Done.'));
 }
@@ -322,8 +337,7 @@ async function doIt(opts: ITOptions): Promise<any> {
       console.log(colors.green('* Aiax testnode initialized'));
     }
 
-    // Add some aaiax to gorc testing acc3
-    await aiaxRun(['add-genesis-account', 'aiax1y3fgntsaf2cmylsnu3880g7wp6aj73zuc6hlwy', '1000000000000000000aaiax']);
+    await depositTestTokens();
 
     console.log(colors.green('* Aiax node starting...'));
     await aiaxNodeStart().waitForEvent('started');
