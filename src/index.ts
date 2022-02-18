@@ -4,6 +4,7 @@ import contractCmd from './contract';
 import { envInit } from './env';
 import ethCmd from './eth';
 import testnodeCmd from './testnode';
+import testsCmd from './tests';
 
 
 process.on('unhandledRejection', (err) => {
@@ -16,5 +17,6 @@ testnodeCmd(program);
 contractCmd(program);
 ethCmd(program);
 buildCmd(program);
+testsCmd(program);
 
 program.parse(process.argv);

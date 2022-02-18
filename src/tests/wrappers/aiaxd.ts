@@ -1,0 +1,339 @@
+import * as fs from 'fs';
+import * as path from 'path';
+import toml from '@ltd/j-toml';
+import mpatch from 'json8-merge-patch';
+import { processRunGetOutput, ProcessWrapper } from "../../proc";
+import { randomBytes } from 'crypto';
+import { getJsonPath, setJsonPath } from '../../utils';
+import { tomlApply } from '../../toml';
+
+type AiaxdWrapperOpts = {
+  binary: string,
+  directory: string,
+  peers: Array<string>,
+  ports: {
+    eth: number,
+  },
+  listen: {
+    api: number,
+    grpc: number,
+    json_rpc: number,
+    json_rpc_ws: number,
+    proxy_app: number,
+    rpc: number,
+    pprof: number,
+    p2p: number,
+  }
+};
+
+export class AiaxdWrapper {
+  private proc?: ProcessWrapper;
+  private _node_id?: string;
+  readonly opts: AiaxdWrapperOpts;
+  private readonly keys: Map<string, string>;
+
+  constructor(opts: AiaxdWrapperOpts) {
+    this.proc = null;
+    this.opts = opts;
+    this.keys = new Map();
+    fs.mkdirSync(this.opts.directory, { recursive: true });
+    fs.mkdirSync(path.resolve(this.opts.directory, 'node'), { recursive: true });
+    this.initConfig();
+  }
+
+  get node_id(): string { return this._node_id; }
+
+  get genesis(): string { return path.resolve(this.opts.directory, 'node', 'genesis.json'); }
+
+  async init(): Promise<string> {
+    let output = await processRunGetOutput(this.opts.binary, [
+      "--home",
+      this.opts.directory,
+      "init",
+      "localnet",
+      "--chain-id",
+      `aiax_${Math.floor(new Date().getTime() / 1000)}-1`,
+    ], {
+      cwd: this.opts.directory,
+    });
+
+    await this.patchConfig();
+
+    let data = JSON.parse(output);
+    this._node_id = data.node_id
+    return this.node_id;
+  }
+
+  initConfig() {
+    let dir = path.resolve(this.opts.directory, "config");
+    fs.mkdirSync(dir, { recursive: true });
+
+    { // Ensure config/config.toml
+      let data = toml.stringify({
+        genesis_file: 'node/genesis.json',
+        priv_validator_key_file: 'node/priv_validator_key.json',
+        priv_validator_state_file: 'node/priv_validator_state.json',
+        node_key_file: 'node/node_key.json',
+
+        p2p: toml.Section({
+          addr_book_file: 'node/addrbook.json',
+        }),
+      }, { newline: '\n' });
+
+      fs.writeFileSync(path.resolve(dir, "config.toml"), data, { flag: 'w' });
+    }
+  }
+
+  async patchConfig() {
+    let dir = path.resolve(this.opts.directory, "config");
+    fs.mkdirSync(dir, { recursive: true });
+
+    { // Ensure config/client.toml
+      let data = {
+        'keyring-backend': 'test',
+        output: 'json',
+        node: `tcp://127.0.0.1:${this.opts.listen.rpc}`,
+      };
+
+      let cfg = path.resolve(dir, "client.toml");
+      await tomlApply(cfg, data);
+    }
+
+    { // Ensure config/app.toml
+      let data = {
+        api: toml.Section({
+          enable: true,
+          address: `tcp://127.0.0.1:${this.opts.listen.api}`,
+        }),
+        rosetta: toml.Section({
+          enable: false,
+        }),
+        grpc: toml.Section({
+          enable: true,
+          address: `127.0.0.1:${this.opts.listen.grpc}`,
+        }),
+        'grpc-web': toml.Section({
+          enable: false,
+        }),
+        'json-rpc': toml.Section({
+          enable: true,
+          address: `127.0.0.1:${this.opts.listen.json_rpc}`,
+          'address-ws': `127.0.0.1:${this.opts.listen.json_rpc_ws}`,
+        }),
+        ethereum: toml.Section({
+          rpc: `http://127.0.0.1:${this.opts.ports.eth}/`,
+        }),
+      };
+
+      let cfg = path.resolve(dir, "app.toml");
+      await tomlApply(cfg, data);
+    }
+
+    { // Ensure config/config.toml
+      let data = {
+        proxy_app: `tcp://127.0.0.1:${this.opts.listen.proxy_app}`,
+        genesis_file: 'node/genesis.json',
+        priv_validator_key_file: 'node/priv_validator_key.json',
+        priv_validator_state_file: 'node/priv_validator_state.json',
+        node_key_file: 'node/node_key.json',
+
+        rpc: toml.Section({
+          laddr: `tcp://0.0.0.0:${this.opts.listen.rpc}`,
+          pprof_laddr: `127.0.0.1:${this.opts.listen.pprof}`,
+        }),
+        p2p: toml.Section({
+          laddr: `tcp://127.0.0.1:${this.opts.listen.p2p}`,
+          persistent_peers: this.opts.peers.join(','),
+          addr_book_file: 'node/addrbook.json',
+        }),
+      };
+
+      let cfg = path.resolve(dir, "config.toml");
+      await tomlApply(cfg, data);
+    }
+  }
+
+  async ensureKey(name: string): Promise<string> {
+    if (this.keys.has(name)) {
+      return this.keys.get(name);
+    }
+
+    let output = await processRunGetOutput(this.opts.binary, [
+      "--home",
+      this.opts.directory,
+      "keys",
+      "add",
+      name,
+    ], {
+      cwd: this.opts.directory,
+    });
+
+    let data = JSON.parse(output);
+    this.keys.set(name, data.address);
+    return data.address;
+  }
+
+  async ensureValKey(name: string): Promise<string> {
+    await this.ensureKey(name);
+
+    let output = await processRunGetOutput(this.opts.binary, [
+      "--home",
+      this.opts.directory,
+      "keys",
+      "show",
+      name,
+      "--bech",
+      "val",
+    ], {
+      cwd: this.opts.directory,
+    });
+
+    let data = JSON.parse(output);
+    this.keys.set(name, data.address);
+    return data.address;
+  }
+
+  async addGenesisAccount(address: string, amount: string): Promise<void> {
+    await processRunGetOutput(this.opts.binary, [
+      "--home",
+      this.opts.directory,
+      "add-genesis-account",
+      address,
+      amount,
+    ], {
+      cwd: this.opts.directory,
+    });
+  }
+
+  async gentx(key_name: string, amount: string, eth_addr: string, orchestrator_addr: string, eth_sig: string): Promise<void> {
+    const gen = JSON.parse(fs.readFileSync(this.genesis).toString('utf8'));
+
+    await processRunGetOutput(this.opts.binary, [
+      "--home",
+      this.opts.directory,
+      "gentx",
+      key_name,
+      amount,
+      eth_addr,
+      orchestrator_addr,
+      eth_sig,
+      "--chain-id",
+      gen['chain_id'],
+      "--website",
+      "https://aiax.network",
+      "--ip",
+      "127.0.0.1",
+      "--node-id",
+      this._node_id,
+      "--note",
+      `${this.node_id}@127.0.0.1:${this.opts.listen.p2p}`,
+    ], {
+      cwd: this.opts.directory,
+    });
+
+    await processRunGetOutput(this.opts.binary, [
+      "--home",
+      this.opts.directory,
+      "collect-gentxs",
+      "--keyring-backend",
+      "test",
+    ], {
+      cwd: this.opts.directory,
+    });
+
+    fs.rmSync(path.resolve(this.opts.directory, "config", "gentx"), { recursive: true });
+  }
+
+  initGenesis(aiax_token: string) {
+    const gen = JSON.parse(fs.readFileSync(this.genesis).toString('utf8'));
+    const denom = 'aaiax';
+    const gravityId = randomBytes(15).toString('hex');
+
+    setJsonPath(gen, '/app_state/aiax/params', 'aiax_token_contract_address', aiax_token);
+    setJsonPath(gen, '/app_state/crisis/constant_fee', 'amount', '1000');
+    setJsonPath(gen, '/app_state/crisis/constant_fee', 'denom', denom);
+    setJsonPath(gen, '/app_state/evm/params', 'evm_denom', denom);
+    setJsonPath(gen, '/app_state/feemarket/params', 'no_base_fee', true);
+    setJsonPath(gen, '/app_state/gov/deposit_params/min_deposit/0', 'amount', `1000${'0'.repeat(18)}`);
+    setJsonPath(gen, '/app_state/gov/deposit_params/min_deposit/0', 'denom', denom);
+    setJsonPath(gen, '/app_state/gravity/params', 'average_block_time', '5000');
+    setJsonPath(gen, '/app_state/gravity/params', 'average_ethereum_block_time', '14000');
+    setJsonPath(gen, '/app_state/gravity/params', 'gravity_id', gravityId);
+    setJsonPath(gen, '/app_state/mint/params', 'mint_denom', denom);
+    setJsonPath(gen, '/app_state/staking/params', 'bond_denom', denom);
+    setJsonPath(gen, '/consensus_params/block', 'max_gas', '10000000');
+
+    const dmd = getJsonPath(gen, '/app_state/bank/denom_metadata') as any[];
+    dmd.push({
+      description: 'Aiax token',
+      name: 'Aiax token',
+      display: 'aiax',
+      symbol: 'AXX',
+      base: 'aaiax',
+      denom_units: [
+        {
+          denom: 'aaiax',
+          exponent: 0,
+          aliases: ['attoaiax', 'wei'],
+        },
+        {
+          denom: 'maiax',
+          exponent: 15,
+          aliases: ['milliaiax'],
+        },
+        {
+          denom: 'aiax',
+          exponent: 18,
+          aliases: ['AXX'],
+        },
+      ],
+    });
+
+    fs.writeFileSync(this.genesis, JSON.stringify(gen, null, 2));
+  }
+
+  start(): Promise<void> {
+    if (this.proc) {
+      return Promise.resolve();
+    }
+
+    this.proc = new ProcessWrapper(this.opts.binary, [
+      "--home",
+      this.opts.directory,
+      "start",
+    ], {
+      cwd: this.opts.directory,
+      killIfNoEvents: [{ event: 'started', timeout: 5000 }],
+      onStdout: (() => {
+        const stdout = path.resolve(this.opts.directory, 'stdout.log');
+        return (data, emitter) => {
+          fs.appendFileSync(stdout, data);
+        }
+      }),
+      onStderr: (() => {
+        let started = false;
+        const stderr = path.resolve(this.opts.directory, 'stderr.log');
+        return function (data, emitter) {
+          fs.appendFileSync(stderr, data);
+          if (!started && data.toString().indexOf('executed block') !== -1) {
+            started = true;
+            emitter.emit('started');
+          }
+        };
+      })(),
+    });
+
+    return this.proc.waitForEvent('started');
+  }
+
+  stop(): Promise<number> {
+    if (!this.proc) {
+      return Promise.reject();
+    }
+
+    let kill = this.proc.kill();
+    this.proc = null;
+
+    return kill;
+  }
+}
