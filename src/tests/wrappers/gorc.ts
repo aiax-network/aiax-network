@@ -10,6 +10,9 @@ type GorcWrapperOpts = {
   ports: {
     eth: number,
     cosmos: number,
+  },
+  listen: {
+    metrics: number,
   }
 };
 
@@ -59,6 +62,9 @@ export class GorcWrapper {
           amount: BigInt(1000),
           denom: 'aaiax'
         }),
+      }),
+      metrics: toml.Section({
+        listen_addr: `127.0.0.1:${this.opts.listen.metrics}`,
       }),
     }, { newline: '\n' });
 
@@ -117,7 +123,7 @@ export class GorcWrapper {
     return addr[1];
   }
 
-  async signDelegateKeys(eth_key_name: string, validator_addr: string, nonce: number): Promise<string> {
+  async signDelegateKeys(eth_key_name: string, validator_addr: string, nonce?: number): Promise<string> {
     let output = await processRunGetOutput(this.opts.binary, [
       "--config",
       this.cfg,
@@ -125,7 +131,7 @@ export class GorcWrapper {
       "--args",
       eth_key_name,
       validator_addr,
-      nonce.toString(),
+      ...(typeof nonce === 'number' ? [nonce.toString()] : []),
     ], {
       cwd: this.opts.directory,
     });

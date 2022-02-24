@@ -49,6 +49,9 @@ async function initNode(eth: EthWrapper, bin: Binaries, dir: string): Promise<No
       ports: {
         eth: eth.port,
         cosmos: 9090,
+      },
+      listen: {
+        metrics: 3000,
       }
     }),
     token: '',
@@ -70,6 +73,9 @@ async function initNode(eth: EthWrapper, bin: Binaries, dir: string): Promise<No
   const validator = await node.aiaxd.ensureValKey('validator');
   console.log(`Created aiaxd validator key ${validator}`);
 
+  const test_bank = await node.aiaxd.ensureKey('test_bank');
+  console.log(`Created aiaxd test_bank key ${test_bank}`);
+
   const orchestrator = await node.gorc.ensureCosmosKey('orchestrator');
   console.log(`Created gorc orchestrator cosmos key ${orchestrator}`);
 
@@ -79,6 +85,7 @@ async function initNode(eth: EthWrapper, bin: Binaries, dir: string): Promise<No
   await eth.depositEth(signer, '1000000000000000000');
   console.log(`Deposited 1eth to gorc signer`);
 
+  await node.aiaxd.addGenesisAccount('test_bank', '1000000000000000000000000aaiax');
   await node.aiaxd.addGenesisAccount('validator', '1000000000000000000000aaiax');
   await node.aiaxd.addGenesisAccount(orchestrator, '1000000000000000000000aaiax');
   console.log(`Updated genesis accounts`);
@@ -86,7 +93,7 @@ async function initNode(eth: EthWrapper, bin: Binaries, dir: string): Promise<No
   const sign = await node.gorc.signDelegateKeys('signer', validator, 0);
   console.log(`Signed delegate keys ${sign.substring(0, 32)}...`);
 
-  await node.aiaxd.gentx('validator', '1000000000000000000000aaiax', signer, orchestrator, sign);
+  await node.aiaxd.txGenesis('validator', '1000000000000000000000aaiax', signer, orchestrator, sign);
   console.log(`Inited genesis transaction`);
 
   await node.aiaxd.start();
@@ -132,6 +139,9 @@ async function joinNode(eth: EthWrapper, bin: Binaries, dir: string, join: Node)
       ports: {
         eth: eth.port,
         cosmos: 9090 + 10,
+      },
+      listen: {
+        metrics: 3000 + 10,
       }
     }),
     token: join.token,
@@ -159,9 +169,25 @@ async function joinNode(eth: EthWrapper, bin: Binaries, dir: string, join: Node)
   await eth.depositEth(signer, '1000000000000000000');
   console.log(`Deposited 1eth to gorc signer`);
 
+  // Here we take the same validator address but with another bech32 prefix
+  await join.aiaxd.sendTokens('test_bank', await node.aiaxd.ensureKey('validator'), '1000000000000000000000aaiax');
+  console.log(`Deposited 1000aiax to aiax validator`);
+
+  await join.aiaxd.sendTokens('test_bank', orchestrator, '1000000000000000000000aaiax');
+  console.log(`Deposited 1000aiax to gorc orchestrator`);
+
   await node.aiaxd.start();
   await new Promise((resolve, _) => setTimeout(resolve, 5000));
   console.log(`Started aiaxd node`);
+
+  const tx_scv = await node.aiaxd.txStakingCreateValidator('validator', '1000000000000000000000aaiax');
+  console.log(`Created aiax validator in transaction ${tx_scv.substring(0, 32)}...`);
+
+  const sign = await node.gorc.signDelegateKeys('signer', validator);
+  console.log(`Signed delegate keys ${sign.substring(0, 32)}...`);
+
+  const tx_gsdk = await node.aiaxd.txGravitySetDelegateKeys('validator', signer, orchestrator, sign);
+  console.log(`Registered gravity delegate keys in transaction ${tx_gsdk.substring(0, 32)}...`);
 
   await node.gorc.start('orchestrator', 'signer');
   console.log(`Started gorc`);
@@ -181,7 +207,8 @@ async function singleNodeTest(opts: any) {
 
   let node1 = await initNode(eth, bin, path.resolve(base_dir, "node1"));
 
-  await new Promise((resolve, _) => setTimeout(resolve, 10000));
+  console.log("Testnet is online, running for 60sec for sure");
+  await new Promise((resolve, _) => setTimeout(resolve, 60000));
 }
 
 async function multiNodeTest(opts: any) {
@@ -197,7 +224,8 @@ async function multiNodeTest(opts: any) {
   let node1 = await initNode(eth, bin, path.resolve(base_dir, "node1"));
   let node2 = await joinNode(eth, bin, path.resolve(base_dir, "node2"), node1);
 
-  await new Promise((resolve, _) => setTimeout(resolve, 10000));
+  console.log("Testnet is online, running for 60sec to be sure that valset is updated");
+  await new Promise((resolve, _) => setTimeout(resolve, 60000));
 }
 
 function wrapStop(test: (any) => Promise<any>) {

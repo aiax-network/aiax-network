@@ -1,8 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import toml from '@ltd/j-toml';
-import mpatch from 'json8-merge-patch';
-import { processRunGetOutput, ProcessWrapper } from "../../proc";
+import { processRun, processRunGetOutput, ProcessWrapper } from "../../proc";
 import { randomBytes } from 'crypto';
 import { getJsonPath, setJsonPath } from '../../utils';
 import { tomlApply } from '../../toml';
@@ -26,16 +25,20 @@ type AiaxdWrapperOpts = {
   }
 };
 
+const chain_id = `aiax_${Math.floor(new Date().getTime() / 1000)}-1`;
+
 export class AiaxdWrapper {
   private proc?: ProcessWrapper;
   private _node_id?: string;
   readonly opts: AiaxdWrapperOpts;
   private readonly keys: Map<string, string>;
+  private readonly val_keys: Map<string, string>;
 
   constructor(opts: AiaxdWrapperOpts) {
     this.proc = null;
     this.opts = opts;
     this.keys = new Map();
+    this.val_keys = new Map();
     fs.mkdirSync(this.opts.directory, { recursive: true });
     fs.mkdirSync(path.resolve(this.opts.directory, 'node'), { recursive: true });
     this.initConfig();
@@ -52,7 +55,7 @@ export class AiaxdWrapper {
       "init",
       "localnet",
       "--chain-id",
-      `aiax_${Math.floor(new Date().getTime() / 1000)}-1`,
+      chain_id,
     ], {
       cwd: this.opts.directory,
     });
@@ -90,6 +93,7 @@ export class AiaxdWrapper {
 
     { // Ensure config/client.toml
       let data = {
+        'chain-id': chain_id,
         'keyring-backend': 'test',
         output: 'json',
         node: `tcp://127.0.0.1:${this.opts.listen.rpc}`,
@@ -118,7 +122,7 @@ export class AiaxdWrapper {
         'json-rpc': toml.Section({
           enable: true,
           address: `127.0.0.1:${this.opts.listen.json_rpc}`,
-          'address-ws': `127.0.0.1:${this.opts.listen.json_rpc_ws}`,
+          'ws-address': `127.0.0.1:${this.opts.listen.json_rpc_ws}`,
         }),
         ethereum: toml.Section({
           rpc: `http://127.0.0.1:${this.opts.ports.eth}/`,
@@ -174,6 +178,10 @@ export class AiaxdWrapper {
   }
 
   async ensureValKey(name: string): Promise<string> {
+    if (this.val_keys.has(name)) {
+      return this.val_keys.get(name);
+    }
+
     await this.ensureKey(name);
 
     let output = await processRunGetOutput(this.opts.binary, [
@@ -189,7 +197,7 @@ export class AiaxdWrapper {
     });
 
     let data = JSON.parse(output);
-    this.keys.set(name, data.address);
+    this.val_keys.set(name, data.address);
     return data.address;
   }
 
@@ -205,9 +213,81 @@ export class AiaxdWrapper {
     });
   }
 
-  async gentx(key_name: string, amount: string, eth_addr: string, orchestrator_addr: string, eth_sig: string): Promise<void> {
-    const gen = JSON.parse(fs.readFileSync(this.genesis).toString('utf8'));
+  async sendTokens(key_name: string, dest_addr: string, amount: string): Promise<void> {
+    let data = JSON.parse(await processRunGetOutput(this.opts.binary, [
+      "--home",
+      this.opts.directory,
+      "tx",
+      "bank",
+      "send",
+      key_name,
+      dest_addr,
+      amount,
+      "-y",
+    ], {
+      cwd: this.opts.directory,
+    }));
 
+    await this.awaitTransaction(data.txhash);
+
+    return data.txhash;
+  }
+
+  async getBalances(address: string): Promise<any> {
+    return JSON.parse(await processRunGetOutput(this.opts.binary, [
+      "--home",
+      this.opts.directory,
+      "query",
+      "bank",
+      "balances",
+      address,
+    ], {
+      cwd: this.opts.directory,
+    }));
+  }
+
+  async getTransaction(hash: string): Promise<any> {
+    return JSON.parse(await processRunGetOutput(this.opts.binary, [
+      "--home",
+      this.opts.directory,
+      "query",
+      "tx",
+      hash,
+    ], {
+      cwd: this.opts.directory,
+    }));
+  }
+
+  async awaitTransaction(hash: string): Promise<any> {
+    while (true) {
+      let out = [], err = [];
+      try {
+
+        await processRun(this.opts.binary, [
+          "--home",
+          this.opts.directory,
+          "query",
+          "tx",
+          hash,
+        ], {
+          cwd: this.opts.directory,
+          onStdout: (data) => out.push(data),
+          onStderr: (data) => err.push(data),
+        });
+
+        return JSON.parse(out.join(''));
+
+      } catch (e) {
+        if (!(err.join('').indexOf(`tx (${hash}) not found`))) {
+          throw e;
+        }
+      }
+
+      await new Promise((resolve, _) => setTimeout(resolve, 0.25));
+    }
+  }
+
+  async txGenesis(key_name: string, amount: string, eth_addr: string, orchestrator_addr: string, eth_sig: string): Promise<void> {
     await processRunGetOutput(this.opts.binary, [
       "--home",
       this.opts.directory,
@@ -218,7 +298,7 @@ export class AiaxdWrapper {
       orchestrator_addr,
       eth_sig,
       "--chain-id",
-      gen['chain_id'],
+      chain_id,
       "--website",
       "https://aiax.network",
       "--ip",
@@ -242,6 +322,69 @@ export class AiaxdWrapper {
     });
 
     fs.rmSync(path.resolve(this.opts.directory, "config", "gentx"), { recursive: true });
+  }
+
+  async txStakingCreateValidator(key_name: string, amount: string): Promise<string> {
+    const pubkey = await processRunGetOutput(this.opts.binary, [
+      "--home",
+      this.opts.directory,
+      "tendermint",
+      "show-validator",
+    ], {
+      cwd: this.opts.directory,
+    });
+
+    const data = JSON.parse(await processRunGetOutput(this.opts.binary, [
+      "--home",
+      this.opts.directory,
+      "tx",
+      "staking",
+      "create-validator",
+      "--from",
+      key_name,
+      "--amount",
+      amount,
+      "--pubkey",
+      pubkey,
+      "--commission-rate",
+      "0.10",
+      "--commission-max-rate",
+      "0.20",
+      "--commission-max-change-rate",
+      "0.01",
+      "--min-self-delegation",
+      "1",
+      "-y",
+    ], {
+      cwd: this.opts.directory,
+    }));
+
+    await this.awaitTransaction(data.txhash);
+
+    return data.txhash;
+  }
+
+  async txGravitySetDelegateKeys(key_name: string, eth_addr: string, orchestrator_addr: string, eth_sig: string): Promise<string> {
+    const data = JSON.parse(await processRunGetOutput(this.opts.binary, [
+      "--home",
+      this.opts.directory,
+      "tx",
+      "gravity",
+      "set-delegate-keys",
+      this.val_keys.get(key_name),
+      orchestrator_addr,
+      eth_addr,
+      eth_sig,
+      "--from",
+      key_name,
+      "-y",
+    ], {
+      cwd: this.opts.directory,
+    }));
+
+    await this.awaitTransaction(data.txhash);
+
+    return data.txhash;
   }
 
   initGenesis(aiax_token: string) {
