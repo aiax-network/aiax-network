@@ -76,6 +76,29 @@ export class EthWrapper {
     return addr[1];
   }
 
+  async deployExternalToken(): Promise<string> {
+    let output = await processRunGetOutput(process.execPath, [
+      "./dist/src/index.js",
+      "contract",
+      "deploy",
+      "--cosmos-node",
+      `http://localhost:${0}`,
+      "--eth-node",
+      `http://localhost:${this.port}`,
+      "--contracts",
+      "ERC20TokenOne",
+      "--eth-privkey",
+      priv_key,
+    ]);
+
+    let addr = output.match('(0x[a-zA-Z0-9]{32,})($|[\s\n\r])');
+    if (!addr) {
+      return Promise.reject('Cannot deploy external erc token');
+    }
+
+    return addr[1];
+  }
+
   async deployGravity(cosmos_port: number): Promise<string> {
     let output = await processRunGetOutput(process.execPath, [
       "./dist/src/index.js",

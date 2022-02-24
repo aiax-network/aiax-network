@@ -248,6 +248,57 @@ async function testSendNativeToAiaxToken(eth: EthWrapper, node: Node) {
   console.log('[testSendNativeToAiaxToken] Ok');
 }
 
+async function testSendExternalTokenToAiax(eth: EthWrapper, node: Node, token_addr: string) {
+  console.log('[testSendExternalTokenToAiax] Start');
+
+  const src = await node.gorc.ensureEthKey('test_testSendExternalTokenToAiax_src');
+  const dst = await node.gorc.ensureCosmosKey('test_testSendExternalTokenToAiax_dst');
+  const dst_eth = (await node.aiaxd.parseKey(dst))[0];
+
+  await eth.depositEth(src, '1000000000000000000');
+  console.log(`Deposited 1eth to ${src}`);
+  await eth.depositErc20(token_addr, src, '1000000000000000000');
+  console.log(`Deposited erc20 1tone to ${src}`);
+
+  await node.gorc.txEthToCosmos(token_addr, 'test_testSendExternalTokenToAiax_src', dst, '1000000000000000000');
+
+  console.log(`Sent eth-to-cosmos transaction, awaiting for erc20 to be mapped in aiax`);
+  while (!(await node.aiaxd.getErc20Mapping(token_addr))) {
+    await new Promise((resolve, _) => setTimeout(resolve, 1000));
+  }
+
+  const mapping_addr = await node.aiaxd.getErc20Mapping(token_addr);
+
+  let balance = await node.aiaxd.getErc20Balance(mapping_addr, dst_eth);
+  assert.equal(balance, '1000000000000000000');
+  let name = await node.aiaxd.getErc20Name(mapping_addr);
+  assert.equal(name, `aiax/${token_addr}`);
+
+  console.log('[testSendExternalTokenToAiax] Ok');
+}
+
+async function testSendAiaxToExternalToken(eth: EthWrapper, node: Node, token_addr: string) {
+  console.log('[testSendAiaxToExternalToken] Start');
+
+  const src = await node.gorc.ensureCosmosKey('test_testSendExternalTokenToAiax_dst');
+  const dst = await node.gorc.ensureEthKey('test_testSendAiaxToExternalToken_dst');
+
+  await node.aiaxd.sendTokens('test_bank', src, '1000000000000000000aaiax');
+  console.log(`Deposited 1aiax to ${src}`);
+
+  await node.gorc.txCosmosToEth(`gravity${token_addr}`, 'test_testSendExternalTokenToAiax_dst', dst, '1000000000000000000');
+
+  console.log(`Sent cosmos-to-eth transaction, awaiting for balance to change`);
+  while ((await eth.getErc20Balance(token_addr, dst)) === '0') {
+    await new Promise((resolve, _) => setTimeout(resolve, 1000));
+  }
+
+  let balance = await eth.getErc20Balance(token_addr, dst);
+  assert.equal(balance, '1000000000000000000');
+
+  console.log('[testSendAiaxToExternalToken] Ok');
+}
+
 async function singleNodeTest(opts: any) {
   let base_dir = path.resolve(process.cwd(), "test_data");
   fs.rmSync(base_dir, { recursive: true });
@@ -262,6 +313,12 @@ async function singleNodeTest(opts: any) {
 
   await testSendAiaxTokenToNative(eth, node1);
   await testSendNativeToAiaxToken(eth, node1);
+
+  const external_token = await eth.deployExternalToken();
+  console.log(`Deployed external etc20 token at ${external_token}`);
+
+  await testSendExternalTokenToAiax(eth, node1, external_token);
+  // await testSendAiaxToExternalToken(eth, node1, external_token);
 }
 
 async function multiNodeTest(opts: any) {
@@ -282,6 +339,12 @@ async function multiNodeTest(opts: any) {
 
   await testSendAiaxTokenToNative(eth, node2);
   await testSendNativeToAiaxToken(eth, node2);
+
+  const external_token = await eth.deployExternalToken();
+  console.log(`Deployed external etc20 token at ${external_token}`);
+
+  await testSendExternalTokenToAiax(eth, node2, external_token);
+  // await testSendAiaxToExternalToken(eth, node1, external_token);
 }
 
 function wrapStop(test: (any) => Promise<any>) {

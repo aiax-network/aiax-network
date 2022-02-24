@@ -201,6 +201,30 @@ export class AiaxdWrapper {
     return data.address;
   }
 
+  async parseKey(value: string): Promise<Array<string>> {
+    let output = await processRunGetOutput(this.opts.binary, [
+      "--home",
+      this.opts.directory,
+      "keys",
+      "parse",
+      value,
+      "--output",
+      "json",
+    ], {
+      cwd: this.opts.directory,
+    });
+
+    const data = JSON.parse(output);
+
+    if (typeof data.bytes === 'string') {
+      return ['0x' + data.bytes];
+    } else if (Array.isArray(data.formats)) {
+      return [...data.formats];
+    } else {
+      return Promise.reject('Unexpected response');
+    }
+  }
+
   async addGenesisAccount(address: string, amount: string): Promise<void> {
     await processRunGetOutput(this.opts.binary, [
       "--home",
@@ -244,6 +268,44 @@ export class AiaxdWrapper {
     ], {
       cwd: this.opts.directory,
     }));
+  }
+
+  async getErc20Mapping(eth_token_addr: string): Promise<string | null> {
+    const data = JSON.parse(
+      await processRunGetOutput('grpcurl', [
+        '-plaintext',
+        '-d',
+        `{"address":"${eth_token_addr}"}`,
+        `127.0.0.1:${this.opts.listen.grpc}`,
+        'aiax.v1.Query/ERC20Address',
+      ])
+    );
+
+    return data.address;
+  }
+
+  async getErc20Balance(token_addr: string, addr: string): Promise<any> {
+    return (
+      await processRunGetOutput('eth', [
+        'contract:call',
+        '--network',
+        `http://127.0.0.1:${this.opts.listen.json_rpc}`,
+        `erc20@${token_addr}`,
+        `balanceOf("${addr}")`,
+      ])
+    ).trim();
+  }
+
+  async getErc20Name(token_addr: string): Promise<any> {
+    return (
+      await processRunGetOutput('eth', [
+        'contract:call',
+        '--network',
+        `http://127.0.0.1:${this.opts.listen.json_rpc}`,
+        `erc20@${token_addr}`,
+        `name()`,
+      ])
+    ).trim();
   }
 
   async getTransaction(hash: string): Promise<any> {
