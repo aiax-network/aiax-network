@@ -118,7 +118,7 @@ export class EthWrapper {
 
   async depositErc20(erc20_addr: string, to_addr: string, amount: string): Promise<void> {
     await processRunGetOutput('eth', [
-      "transaction:send",
+      "contract:send",
       "--network",
       `http://localhost:${this.port}`,
       "--pk",
@@ -127,5 +127,17 @@ export class EthWrapper {
       `erc20@${erc20_addr}`,
       `transfer("${to_addr}", "${amount}")`,
     ]);
+  }
+
+  async getErc20Balance(erc20_addr: string, addr: string): Promise<string> {
+    return (
+      await processRunGetOutput('eth', [
+        'contract:call',
+        "--network",
+        `http://localhost:${this.port}`,
+        `erc20@${erc20_addr}`,
+        `balanceOf("${addr}")`,
+      ])
+    ).trim();
   }
 }

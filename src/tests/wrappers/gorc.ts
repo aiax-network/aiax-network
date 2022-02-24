@@ -144,6 +144,37 @@ export class GorcWrapper {
     return sign[1];
   }
 
+  async txEthToCosmos(token: string, key_name: string, dest: string, amount: string): Promise<void> {
+    await processRunGetOutput(this.opts.binary, [
+      "--config",
+      this.cfg,
+      "eth-to-cosmos",
+      token,
+      key_name,
+      this.opts.gravity_contract,
+      dest,
+      amount,
+      "1",
+    ], {
+      cwd: this.opts.directory,
+    });
+  }
+
+  async txCosmosToEth(denom: string, key_name: string, dest: string, amount: string): Promise<void> {
+    await processRunGetOutput(this.opts.binary, [
+      "--config",
+      this.cfg,
+      "cosmos-to-eth",
+      denom,
+      amount,
+      key_name,
+      dest,
+      "1",
+    ], {
+      cwd: this.opts.directory,
+    });
+  }
+
   start(cosmos_key: string, eth_key: string): Promise<void> {
     if (this.proc) {
       return Promise.resolve();

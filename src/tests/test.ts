@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import assert from 'assert';
 import { Command } from "commander";
 import { buildEnsureBinaries } from "../build";
 import { EthWrapper } from "./wrappers/eth";
@@ -160,6 +161,9 @@ async function joinNode(eth: EthWrapper, bin: Binaries, dir: string, join: Node)
   const validator = await node.aiaxd.ensureValKey('validator');
   console.log(`Created aiaxd validator key ${validator}`);
 
+  fs.copyFileSync(path.resolve(join.aiaxd.opts.directory, 'keyring-test', 'test_bank.info'), path.resolve(node.aiaxd.opts.directory, 'keyring-test', 'test_bank.info'));
+  console.log(`Copied aiaxd test_bank key from node ${join.aiaxd.node_id}`);
+
   const orchestrator = await node.gorc.ensureCosmosKey('orchestrator');
   console.log(`Created gorc orchestrator cosmos key ${orchestrator}`);
 
@@ -195,6 +199,55 @@ async function joinNode(eth: EthWrapper, bin: Binaries, dir: string, join: Node)
   return node;
 }
 
+async function testSendAiaxTokenToNative(eth: EthWrapper, node: Node) {
+  console.log('[testSendAiaxTokenToNative] Start');
+
+  const src = await node.gorc.ensureEthKey('test_testSendAiaxTokenToNative_src');
+  const dst = await node.gorc.ensureCosmosKey('test_testSendAiaxTokenToNative_dst');
+
+  await eth.depositEth(src, '1000000000000000000');
+  console.log(`Deposited 1eth to ${src}`);
+  await eth.depositErc20(node.token, src, '1000000000000000000');
+  console.log(`Deposited erc20 1aiax to ${src}`);
+
+  await node.gorc.txEthToCosmos(node.token, 'test_testSendAiaxTokenToNative_src', dst, '1000000000000000000');
+
+  console.log(`Sent eth-to-cosmos transaction, awaiting for balance to change`);
+  while ((await node.aiaxd.getBalances(dst)).balances.length == 0) {
+    await new Promise((resolve, _) => setTimeout(resolve, 1000));
+  }
+
+  let balance = (await node.aiaxd.getBalances(dst)).balances[0];
+  assert.equal(balance.denom, 'aaiax');
+  assert.equal(balance.amount, '1000000000000000000');
+
+  console.log('[testSendAiaxTokenToNative] Ok');
+}
+
+async function testSendNativeToAiaxToken(eth: EthWrapper, node: Node) {
+  console.log('[testSendNativeToAiaxToken] Start');
+
+  const src = await node.gorc.ensureCosmosKey('test_testSendNativeToAiaxToken_src');
+  const dst = await node.gorc.ensureEthKey('test_testSendNativeToAiaxToken_dst');
+
+  await eth.depositErc20(node.token, node.gravity, '1000000000000000000');
+  console.log(`Deposited erc20 1aiax to eth gravity contract`);
+  await node.aiaxd.sendTokens('test_bank', src, '2000000000000000000aaiax');
+  console.log(`Deposited 2aiax to ${src}`);
+
+  await node.gorc.txCosmosToEth('aaiax', 'test_testSendNativeToAiaxToken_src', dst, '1000000000000000000');
+
+  console.log(`Sent cosmos-to-eth transaction, awaiting for balance to change`);
+  while ((await eth.getErc20Balance(node.token, dst)) === '0') {
+    await new Promise((resolve, _) => setTimeout(resolve, 1000));
+  }
+
+  let balance = await eth.getErc20Balance(node.token, dst);
+  assert.equal(balance, '1000000000000000000');
+
+  console.log('[testSendNativeToAiaxToken] Ok');
+}
+
 async function singleNodeTest(opts: any) {
   let base_dir = path.resolve(process.cwd(), "test_data");
   fs.rmSync(base_dir, { recursive: true });
@@ -207,8 +260,8 @@ async function singleNodeTest(opts: any) {
 
   let node1 = await initNode(eth, bin, path.resolve(base_dir, "node1"));
 
-  console.log("Testnet is online, running for 60sec for sure");
-  await new Promise((resolve, _) => setTimeout(resolve, 60000));
+  await testSendAiaxTokenToNative(eth, node1);
+  await testSendNativeToAiaxToken(eth, node1);
 }
 
 async function multiNodeTest(opts: any) {
@@ -226,15 +279,20 @@ async function multiNodeTest(opts: any) {
 
   console.log("Testnet is online, running for 60sec to be sure that valset is updated");
   await new Promise((resolve, _) => setTimeout(resolve, 60000));
+
+  await testSendAiaxTokenToNative(eth, node2);
+  await testSendNativeToAiaxToken(eth, node2);
 }
 
 function wrapStop(test: (any) => Promise<any>) {
   return async function (opts) {
     try {
       await test(opts);
-    } finally {
+    } catch (e) {
       await Promise.allSettled(procs.map(p => p.stop()));
+      throw e;
     }
+    await Promise.allSettled(procs.map(p => p.stop()));
   };
 }
 
