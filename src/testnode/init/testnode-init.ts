@@ -155,6 +155,7 @@ async function testNodeInitExternalContracts(opts: NodeInitOpts) {
     contracts: 'ERC20AiaxToken,ERC20TokenOne',
     ethNode: opts.ethExternalRpcAddress || 'http://localhost:8545',
     ethPrivkey: '0xdf57089febbacf7ba0bc227dafbffa9fc08a93fdc68e1e42411a14efcf23656e',
+    updateState: true,
   });
 }
 

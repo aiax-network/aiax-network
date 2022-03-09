@@ -8,7 +8,7 @@ function command(program: Command) {
 
   const c = program.command('testnode').description('Aiax test node operations');
   require('./init/testnode-init')(c);
-  require('./it/it-tests')(c);
+  require('./it')(c);
 }
 
 export default command;

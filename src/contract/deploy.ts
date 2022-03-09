@@ -18,6 +18,7 @@ interface DeployOpts {
   ethPrivkey: string;
   ethSupplyValidatorBalance?: string;
   contracts: string;
+  updateState: boolean;
 }
 
 const optsDefault: DeployOpts = {
@@ -113,10 +114,12 @@ async function contractDeploy(name: string, _opts: DeployOpts, wallet: Wallet): 
 
 async function contractAiaxTokenDeploy(name: string, opts: DeployOpts, wallet: Wallet): Promise<string> {
   const address = await contractDeploy(name, opts, wallet);
-  const gpath = path.resolve(env.configRoot, 'genesis.json');
-  const gen = JSON.parse(fs.readFileSync(gpath).toString('utf8'));
-  setJsonPath(gen, '/app_state/aiax/params', 'aiax_token_contract_address', address);
-  fs.writeFileSync(gpath, JSON.stringify(gen, null, 2));
+  if (opts.updateState) {
+    const gpath = path.resolve(env.configRoot, 'genesis.json');
+    const gen = JSON.parse(fs.readFileSync(gpath).toString('utf8'));
+    setJsonPath(gen, '/app_state/aiax/params', 'aiax_token_contract_address', address);
+    fs.writeFileSync(gpath, JSON.stringify(gen, null, 2));
+  }
   return address;
 }
 
@@ -153,7 +156,9 @@ async function contractGravityDeploy(name: string, opts: DeployOpts, wallet: Wal
   await gravity.deployed();
 
   console.log(`contract deploy | ${name} deployed at ${gravity.address}`);
-  await submitGravityAddress(gravity.address);
+  if (opts.updateState) {
+    await submitGravityAddress(gravity.address);
+  }
   return gravity.address;
 }
 
@@ -170,6 +175,7 @@ export function command(command: Command) {
   command
     .command('deploy')
     .description('Deploy Aiax bridge contract')
+    .option('--update-state', 'Update aiax and gorc state with deployted addresses', false)
     .option('--cosmos-node <node>', 'Cosmos node Tendermint ABCI RPC', optsDefault.cosmosNode)
     .option('--eth-node <node>', 'Ethereum node JSON RPC', optsDefault.ethNode)
     .option('-c, --contracts <contract>', 'Comma separated contract names', optsDefault.contracts)

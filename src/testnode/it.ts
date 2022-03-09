@@ -301,7 +301,7 @@ async function testSendAiaxToExternalToken(eth: EthWrapper, node: Node, token_ad
 
 async function singleNodeTest(opts: any) {
   let base_dir = path.resolve(process.cwd(), "test_data");
-  fs.rmSync(base_dir, { recursive: true });
+  fs.rmSync(base_dir, { force: true, recursive: true });
 
   let bin = await build(base_dir);
 
@@ -323,7 +323,7 @@ async function singleNodeTest(opts: any) {
 
 async function multiNodeTest(opts: any) {
   let base_dir = path.resolve(process.cwd(), "test_data");
-  fs.rmSync(base_dir, { recursive: true });
+  fs.rmSync(base_dir, { force: true, recursive: true });
 
   let bin = await build(base_dir);
 
@@ -361,12 +361,12 @@ function wrapStop(test: (any) => Promise<any>) {
 
 module.exports = function (command: Command) {
   command
-    .command('single')
+    .command('it-single')
     .description('Perform Aiax network integration tests on single node network')
     .action(wrapStop(singleNodeTest));
 
   command
-    .command('multi')
+    .command('it-multi')
     .description('Perform Aiax network integration tests on single node network')
     .action(wrapStop(multiNodeTest));
 };
