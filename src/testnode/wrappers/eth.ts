@@ -1,3 +1,4 @@
+import { contractsDeploy } from "../../contract/deploy";
 import { processRunGetOutput, ProcessWrapper } from "../../proc";
 
 const priv_key = '0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a';
@@ -54,72 +55,39 @@ export class EthWrapper {
   }
 
   async deployAiaxToken(): Promise<string> {
-    let output = await processRunGetOutput(process.execPath, [
-      "./dist/src/index.js",
-      "contract",
-      "deploy",
-      "--cosmos-node",
-      `http://localhost:${0}`,
-      "--eth-node",
-      `http://localhost:${this.port}`,
-      "--contracts",
-      "ERC20AiaxToken",
-      "--eth-privkey",
-      priv_key,
-    ]);
+    let addrs = await contractsDeploy({
+      cosmosNode: `http://localhost:${0}`,
+      ethNode: `http://localhost:${this.port}`,
+      contracts: 'ERC20AiaxToken',
+      ethPrivkey: priv_key,
+      updateState: false,
+    });
 
-    let addr = output.match('(0x[a-zA-Z0-9]{32,})($|[\s\n\r])');
-    if (!addr) {
-      return Promise.reject('Cannot deploy aiax erc token');
-    }
-
-    return addr[1];
+    return addrs[0];
   }
 
   async deployExternalToken(): Promise<string> {
-    let output = await processRunGetOutput(process.execPath, [
-      "./dist/src/index.js",
-      "contract",
-      "deploy",
-      "--cosmos-node",
-      `http://localhost:${0}`,
-      "--eth-node",
-      `http://localhost:${this.port}`,
-      "--contracts",
-      "ERC20TokenOne",
-      "--eth-privkey",
-      priv_key,
-    ]);
+    let addrs = await contractsDeploy({
+      cosmosNode: `http://localhost:${0}`,
+      ethNode: `http://localhost:${this.port}`,
+      contracts: 'ERC20TokenOne',
+      ethPrivkey: priv_key,
+      updateState: false,
+    });
 
-    let addr = output.match('(0x[a-zA-Z0-9]{32,})($|[\s\n\r])');
-    if (!addr) {
-      return Promise.reject('Cannot deploy external erc token');
-    }
-
-    return addr[1];
+    return addrs[0];
   }
 
   async deployGravity(cosmos_port: number): Promise<string> {
-    let output = await processRunGetOutput(process.execPath, [
-      "./dist/src/index.js",
-      "contract",
-      "deploy",
-      "--cosmos-node",
-      `http://localhost:${cosmos_port}`,
-      "--eth-node",
-      `http://localhost:${this.port}`,
-      "--contracts",
-      "Gravity",
-      "--eth-privkey",
-      priv_key,
-    ]);
+    let addrs = await contractsDeploy({
+      cosmosNode: `http://localhost:${cosmos_port}`,
+      ethNode: `http://localhost:${this.port}`,
+      contracts: 'Gravity',
+      ethPrivkey: priv_key,
+      updateState: false,
+    });
 
-    let addr = output.match('(0x[a-zA-Z0-9]{32,})($|[\s\n\r])');
-    if (!addr) {
-      return Promise.reject('Cannot deploy gravity contract');
-    }
-
-    return addr[1];
+    return addrs[0];
   }
 
   async depositEth(to_addr: string, amount: string): Promise<void> {
