@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./CosmosToken.sol";
-import "./ERC20AiaxToken.sol";
+import "./ERC20AiaxTestToken.sol";
 
 pragma experimental ABIEncoderV2;
 
@@ -29,7 +29,7 @@ struct LogicCallArgs {
 	uint256 invalidationNonce;
 }
 
-contract Gravity is ReentrancyGuard {
+contract GravityTest is ReentrancyGuard {
 	using SafeMath for uint256;
 	using SafeERC20 for IERC20;
 
@@ -90,6 +90,39 @@ contract Gravity is ReentrancyGuard {
 		bytes _returnData,
 		uint256 _eventNonce
 	);
+
+	// TEST FIXTURES
+	// These are here to make it easier to measure gas usage. They should be removed before production
+	function testMakeCheckpoint(
+		address[] memory _validators,
+		uint256[] memory _powers,
+		uint256 _valsetNonce,
+		bytes32 _gravityId
+	) public pure {
+		makeCheckpoint(_validators, _powers, _valsetNonce, _gravityId);
+	}
+
+	function testCheckValidatorSignatures(
+		address[] memory _currentValidators,
+		uint256[] memory _currentPowers,
+		uint8[] memory _v,
+		bytes32[] memory _r,
+		bytes32[] memory _s,
+		bytes32 _theHash,
+		uint256 _powerThreshold
+	) public pure {
+		checkValidatorSignatures(
+			_currentValidators,
+			_currentPowers,
+			_v,
+			_r,
+			_s,
+			_theHash,
+			_powerThreshold
+		);
+	}
+
+	// END TEST FIXTURES
 
 	function lastBatchNonce(address _erc20Address) public view returns (uint256) {
 		return state_lastBatchNonces[_erc20Address];
@@ -586,7 +619,7 @@ contract Gravity is ReentrancyGuard {
 		state_powerThreshold = _powerThreshold;
 		state_lastValsetCheckpoint = newCheckpoint;
     
-    ERC20AiaxToken axx = new ERC20AiaxToken(address(this));
+    ERC20AiaxTestToken axx = new ERC20AiaxTestToken(address(this));
     aiaxTokenAddress = address(axx);
 
 		// LOGS

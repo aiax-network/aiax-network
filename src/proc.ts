@@ -68,16 +68,17 @@ export class ProcessWrapper {
 
     if (opts.killIfNoEvents) {
       opts.killIfNoEvents.forEach((ne) => this.registerKillNoEvent(ne.event, ne.timeout));
-      this.events.on('*', (type) => {
-        type = type.toString();
-        this.noEvents.delete(type);
-        const ew = this.eventWaiters.get(type);
-        if (ew) {
-          this.eventWaiters.delete(type);
-          ew.forEach((r) => r[0]());
-        }
-      });
     }
+
+    this.events.on('*', (type) => {
+      type = type.toString();
+      this.noEvents.delete(type);
+      const ew = this.eventWaiters.get(type);
+      if (ew) {
+        this.eventWaiters.delete(type);
+        ew.forEach((r) => r[0]());
+      }
+    });
   }
 
   private registerKillNoEvent(event: string, timeout: number) {

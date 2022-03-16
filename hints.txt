@@ -5,7 +5,7 @@ npm run aiax -- testnode init -t -v
 ~/.aiax/bin/aiax start
 
 * Orchestrator
-npm run aiax -- contract deploy --contracts=Gravity --eth-privkey=0xdf57089febbacf7ba0bc227dafbffa9fc08a93fdc68e1e42411a14efcf23656e --eth-supply-validator-balance=1
+npm run aiax -- contract deploy --update-state --contracts=Gravity --eth-privkey=0xdf57089febbacf7ba0bc227dafbffa9fc08a93fdc68e1e42411a14efcf23656e --eth-supply-validator-balance=1
 ~/.aiax/bin/gorc -c ~/.aiax/config/gorc.toml orchestrator start --cosmos-key=testnodeorchestrator --ethereum-key=testnodevalidator_eth
 
 ~/.aiax/bin/gorc -c ~/.aiax/config/gorc.toml eth-to-cosmos 0xB581C9264f59BF0289fA76D61B2D0746dCE3C30D acc1 0xC469e7aE4aD962c30c7111dc580B4adbc7E914DD 2546bcd3c84621e976d8185a91a922ae77ecec30 10 1
