@@ -449,12 +449,11 @@ export class AiaxdWrapper {
     return data.txhash;
   }
 
-  initGenesis(aiax_token: string) {
+  initGenesis() {
     const gen = JSON.parse(fs.readFileSync(this.genesis).toString('utf8'));
     const denom = 'aaiax';
     const gravityId = randomBytes(15).toString('hex');
 
-    setJsonPath(gen, '/app_state/aiax/params', 'aiax_token_contract_address', aiax_token);
     setJsonPath(gen, '/app_state/crisis/constant_fee', 'amount', '1000');
     setJsonPath(gen, '/app_state/crisis/constant_fee', 'denom', denom);
     setJsonPath(gen, '/app_state/evm/params', 'evm_denom', denom);

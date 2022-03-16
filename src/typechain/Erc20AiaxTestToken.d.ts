@@ -20,7 +20,7 @@ import { BytesLike } from "@ethersproject/bytes";
 import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 
-interface Erc20AiaxTokenInterface extends ethers.utils.Interface {
+interface Erc20AiaxTestTokenInterface extends ethers.utils.Interface {
   functions: {
     "allowance(address,address)": FunctionFragment;
     "approve(address,uint256)": FunctionFragment;
@@ -110,7 +110,7 @@ interface Erc20AiaxTokenInterface extends ethers.utils.Interface {
   getEvent(nameOrSignatureOrTopic: "Transfer"): EventFragment;
 }
 
-export class Erc20AiaxToken extends Contract {
+export class Erc20AiaxTestToken extends Contract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -121,7 +121,7 @@ export class Erc20AiaxToken extends Contract {
   removeAllListeners(eventName: EventFilter | string): this;
   removeListener(eventName: any, listener: Listener): this;
 
-  interface: Erc20AiaxTokenInterface;
+  interface: Erc20AiaxTestTokenInterface;
 
   functions: {
     allowance(

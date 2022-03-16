@@ -2,22 +2,20 @@ import { createProtobufRpcClient, QueryClient } from '@cosmjs/stargate';
 import { Tendermint34Client } from '@cosmjs/tendermint-rpc';
 import type { Command } from 'commander';
 import { BigNumber, Contract, ethers, Wallet } from 'ethers';
-import * as fs from 'fs';
 import hre from 'hardhat';
-import * as path from 'path';
 import { SignerSetTx } from '../../extra/gravity-bridge/solidity/gen/gravity/v1/gravity';
 import { Query, QueryClientImpl } from '../../extra/gravity-bridge/solidity/gen/gravity/v1/query';
 import env from '../env';
 import { gorcConfigApply, gorcEthKeyShow } from '../gorc';
 import { Gravity } from '../typechain';
-import { setJsonPath, valueOrFile } from '../utils';
+import { valueOrFile } from '../utils';
 
 interface DeployOpts {
   cosmosNode?: string;
   ethNode: string;
   ethPrivkey: string;
   ethSupplyValidatorBalance?: string;
-  contracts: string;
+  contracts?: string;
   updateState: boolean;
 }
 
@@ -85,10 +83,8 @@ export async function contractsDeploy(opts: DeployOpts): Promise<string[]> {
     .filter((n, idx, self) => self.indexOf(n) === idx)
     .map((n) => {
       n = n.trim();
-      if (n === 'Gravity') {
-        return () => contractGravityDeploy(n, opts, wallet);
-      } else if (n == 'ERC20AiaxToken') {
-        return () => contractAiaxTokenDeploy(n, opts, wallet);
+      if (n === 'Gravity' || n === 'GravityTest') {
+        return async () => (await contractGravityDeploy(n as any, opts, wallet)).address;
       } else {
         return () => contractDeploy(n, opts, wallet);
       }
@@ -112,18 +108,15 @@ async function contractDeploy(name: string, _opts: DeployOpts, wallet: Wallet): 
   return contract.address;
 }
 
-async function contractAiaxTokenDeploy(name: string, opts: DeployOpts, wallet: Wallet): Promise<string> {
-  const address = await contractDeploy(name, opts, wallet);
-  if (opts.updateState) {
-    const gpath = path.resolve(env.configRoot, 'genesis.json');
-    const gen = JSON.parse(fs.readFileSync(gpath).toString('utf8'));
-    setJsonPath(gen, '/app_state/aiax/params', 'aiax_token_contract_address', address);
-    fs.writeFileSync(gpath, JSON.stringify(gen, null, 2));
+export async function contractGravityDeploy(
+  name: 'Gravity' | 'GravityTest',
+  opts: DeployOpts,
+  wallet?: Wallet
+): Promise<Gravity> {
+  if (wallet == null) {
+    const provider = await new ethers.providers.JsonRpcProvider(opts.ethNode);
+    wallet = new ethers.Wallet(await valueOrFile(opts.ethPrivkey), provider);
   }
-  return address;
-}
-
-async function contractGravityDeploy(name: string, opts: DeployOpts, wallet: Wallet): Promise<string> {
   const gravityId = ethers.utils.formatBytes32String(await getGravityId(opts));
   const { abi, bytecode } = await hre.artifacts.readArtifact(name);
   const factory = new ethers.ContractFactory(abi, bytecode, wallet);
@@ -155,15 +148,15 @@ async function contractGravityDeploy(name: string, opts: DeployOpts, wallet: Wal
   const gravity = (await factory.deploy(gravityId, vote_power, eth_addresses, powers)) as unknown as Gravity;
   await gravity.deployed();
 
-  console.log(`contract deploy | ${name} deployed at ${gravity.address}`);
+  console.log(`contract deploy | ${name} deployed at ${gravity.address} aiax token: ${await gravity.aiaxTokenAddress()}`);
   if (opts.updateState) {
     await submitGravityAddress(gravity.address);
   }
-  return gravity.address;
+  return gravity;
 }
 
 async function contractsList() {
-  ['Gravity', 'ERC20TokenOne', 'ERC20AiaxToken'].forEach((c) => console.log(c));
+  ['Gravity', 'GravityTest', 'ERC20TokenOne'].forEach((c) => console.log(c));
 }
 
 export function command(command: Command) {

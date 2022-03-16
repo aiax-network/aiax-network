@@ -20,7 +20,7 @@ import { BytesLike } from "@ethersproject/bytes";
 import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 
-interface GravityInterface extends ethers.utils.Interface {
+interface GravityTestInterface extends ethers.utils.Interface {
   functions: {
     "aiaxTokenAddress()": FunctionFragment;
     "deployERC20(string,string,string,uint8)": FunctionFragment;
@@ -37,6 +37,8 @@ interface GravityInterface extends ethers.utils.Interface {
     "state_powerThreshold()": FunctionFragment;
     "submitBatch(address[],uint256[],uint256,uint8[],bytes32[],bytes32[],uint256[],address[],uint256[],uint256,address,uint256)": FunctionFragment;
     "submitLogicCall(address[],uint256[],uint256,uint8[],bytes32[],bytes32[],tuple)": FunctionFragment;
+    "testCheckValidatorSignatures(address[],uint256[],uint8[],bytes32[],bytes32[],bytes32,uint256)": FunctionFragment;
+    "testMakeCheckpoint(address[],uint256[],uint256,bytes32)": FunctionFragment;
     "updateValset(address[],uint256[],uint256,address[],uint256[],uint256,uint8[],bytes32[],bytes32[])": FunctionFragment;
   };
 
@@ -132,6 +134,22 @@ interface GravityInterface extends ethers.utils.Interface {
     ]
   ): string;
   encodeFunctionData(
+    functionFragment: "testCheckValidatorSignatures",
+    values: [
+      string[],
+      BigNumberish[],
+      BigNumberish[],
+      BytesLike[],
+      BytesLike[],
+      BytesLike,
+      BigNumberish
+    ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "testMakeCheckpoint",
+    values: [string[], BigNumberish[], BigNumberish, BytesLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "updateValset",
     values: [
       string[],
@@ -204,6 +222,14 @@ interface GravityInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "testCheckValidatorSignatures",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "testMakeCheckpoint",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "updateValset",
     data: BytesLike
   ): Result;
@@ -225,7 +251,7 @@ interface GravityInterface extends ethers.utils.Interface {
   getEvent(nameOrSignatureOrTopic: "ValsetUpdatedEvent"): EventFragment;
 }
 
-export class Gravity extends Contract {
+export class GravityTest extends Contract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -236,7 +262,7 @@ export class Gravity extends Contract {
   removeAllListeners(eventName: EventFilter | string): this;
   removeListener(eventName: any, listener: Listener): this;
 
-  interface: GravityInterface;
+  interface: GravityTestInterface;
 
   functions: {
     aiaxTokenAddress(overrides?: CallOverrides): Promise<{
@@ -461,6 +487,52 @@ export class Gravity extends Contract {
       overrides?: Overrides
     ): Promise<ContractTransaction>;
 
+    testCheckValidatorSignatures(
+      _currentValidators: string[],
+      _currentPowers: BigNumberish[],
+      _v: BigNumberish[],
+      _r: BytesLike[],
+      _s: BytesLike[],
+      _theHash: BytesLike,
+      _powerThreshold: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: void;
+    }>;
+
+    "testCheckValidatorSignatures(address[],uint256[],uint8[],bytes32[],bytes32[],bytes32,uint256)"(
+      _currentValidators: string[],
+      _currentPowers: BigNumberish[],
+      _v: BigNumberish[],
+      _r: BytesLike[],
+      _s: BytesLike[],
+      _theHash: BytesLike,
+      _powerThreshold: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: void;
+    }>;
+
+    testMakeCheckpoint(
+      _validators: string[],
+      _powers: BigNumberish[],
+      _valsetNonce: BigNumberish,
+      _gravityId: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: void;
+    }>;
+
+    "testMakeCheckpoint(address[],uint256[],uint256,bytes32)"(
+      _validators: string[],
+      _powers: BigNumberish[],
+      _valsetNonce: BigNumberish,
+      _gravityId: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<{
+      0: void;
+    }>;
+
     updateValset(
       _newValidators: string[],
       _newPowers: BigNumberish[],
@@ -670,6 +742,44 @@ export class Gravity extends Contract {
     overrides?: Overrides
   ): Promise<ContractTransaction>;
 
+  testCheckValidatorSignatures(
+    _currentValidators: string[],
+    _currentPowers: BigNumberish[],
+    _v: BigNumberish[],
+    _r: BytesLike[],
+    _s: BytesLike[],
+    _theHash: BytesLike,
+    _powerThreshold: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<void>;
+
+  "testCheckValidatorSignatures(address[],uint256[],uint8[],bytes32[],bytes32[],bytes32,uint256)"(
+    _currentValidators: string[],
+    _currentPowers: BigNumberish[],
+    _v: BigNumberish[],
+    _r: BytesLike[],
+    _s: BytesLike[],
+    _theHash: BytesLike,
+    _powerThreshold: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<void>;
+
+  testMakeCheckpoint(
+    _validators: string[],
+    _powers: BigNumberish[],
+    _valsetNonce: BigNumberish,
+    _gravityId: BytesLike,
+    overrides?: CallOverrides
+  ): Promise<void>;
+
+  "testMakeCheckpoint(address[],uint256[],uint256,bytes32)"(
+    _validators: string[],
+    _powers: BigNumberish[],
+    _valsetNonce: BigNumberish,
+    _gravityId: BytesLike,
+    overrides?: CallOverrides
+  ): Promise<void>;
+
   updateValset(
     _newValidators: string[],
     _newPowers: BigNumberish[],
@@ -876,6 +986,44 @@ export class Gravity extends Contract {
         invalidationId: BytesLike;
         invalidationNonce: BigNumberish;
       },
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    testCheckValidatorSignatures(
+      _currentValidators: string[],
+      _currentPowers: BigNumberish[],
+      _v: BigNumberish[],
+      _r: BytesLike[],
+      _s: BytesLike[],
+      _theHash: BytesLike,
+      _powerThreshold: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    "testCheckValidatorSignatures(address[],uint256[],uint8[],bytes32[],bytes32[],bytes32,uint256)"(
+      _currentValidators: string[],
+      _currentPowers: BigNumberish[],
+      _v: BigNumberish[],
+      _r: BytesLike[],
+      _s: BytesLike[],
+      _theHash: BytesLike,
+      _powerThreshold: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    testMakeCheckpoint(
+      _validators: string[],
+      _powers: BigNumberish[],
+      _valsetNonce: BigNumberish,
+      _gravityId: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    "testMakeCheckpoint(address[],uint256[],uint256,bytes32)"(
+      _validators: string[],
+      _powers: BigNumberish[],
+      _valsetNonce: BigNumberish,
+      _gravityId: BytesLike,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -1134,6 +1282,44 @@ export class Gravity extends Contract {
       overrides?: Overrides
     ): Promise<BigNumber>;
 
+    testCheckValidatorSignatures(
+      _currentValidators: string[],
+      _currentPowers: BigNumberish[],
+      _v: BigNumberish[],
+      _r: BytesLike[],
+      _s: BytesLike[],
+      _theHash: BytesLike,
+      _powerThreshold: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    "testCheckValidatorSignatures(address[],uint256[],uint8[],bytes32[],bytes32[],bytes32,uint256)"(
+      _currentValidators: string[],
+      _currentPowers: BigNumberish[],
+      _v: BigNumberish[],
+      _r: BytesLike[],
+      _s: BytesLike[],
+      _theHash: BytesLike,
+      _powerThreshold: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    testMakeCheckpoint(
+      _validators: string[],
+      _powers: BigNumberish[],
+      _valsetNonce: BigNumberish,
+      _gravityId: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    "testMakeCheckpoint(address[],uint256[],uint256,bytes32)"(
+      _validators: string[],
+      _powers: BigNumberish[],
+      _valsetNonce: BigNumberish,
+      _gravityId: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     updateValset(
       _newValidators: string[],
       _newPowers: BigNumberish[],
@@ -1362,6 +1548,44 @@ export class Gravity extends Contract {
         invalidationNonce: BigNumberish;
       },
       overrides?: Overrides
+    ): Promise<PopulatedTransaction>;
+
+    testCheckValidatorSignatures(
+      _currentValidators: string[],
+      _currentPowers: BigNumberish[],
+      _v: BigNumberish[],
+      _r: BytesLike[],
+      _s: BytesLike[],
+      _theHash: BytesLike,
+      _powerThreshold: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    "testCheckValidatorSignatures(address[],uint256[],uint8[],bytes32[],bytes32[],bytes32,uint256)"(
+      _currentValidators: string[],
+      _currentPowers: BigNumberish[],
+      _v: BigNumberish[],
+      _r: BytesLike[],
+      _s: BytesLike[],
+      _theHash: BytesLike,
+      _powerThreshold: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    testMakeCheckpoint(
+      _validators: string[],
+      _powers: BigNumberish[],
+      _valsetNonce: BigNumberish,
+      _gravityId: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    "testMakeCheckpoint(address[],uint256[],uint256,bytes32)"(
+      _validators: string[],
+      _powers: BigNumberish[],
+      _valsetNonce: BigNumberish,
+      _gravityId: BytesLike,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     updateValset(

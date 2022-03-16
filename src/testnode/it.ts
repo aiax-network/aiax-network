@@ -1,25 +1,25 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import assert from 'assert';
-import { Command } from "commander";
-import { buildEnsureBinaries } from "../build";
-import { EthWrapper } from "./wrappers/eth";
+import { Command } from 'commander';
+import { buildEnsureBinaries } from '../build';
+import { EthWrapper } from './wrappers/eth';
 import { AiaxdWrapper } from './wrappers/aiaxd';
 import { GorcWrapper } from './wrappers/gorc';
 
-type Binaries = { aiaxd: string, gorc: string };
-type Node = { aiaxd: AiaxdWrapper, gorc: GorcWrapper, token: string, gravity: string };
+type Binaries = { aiaxd: string; gorc: string };
+type Node = { aiaxd: AiaxdWrapper; gorc: GorcWrapper; token: string; gravity: string };
 
 let procs = new Array<{ stop: () => Promise<number> }>();
 
 async function build(dir: string): Promise<Binaries> {
   await buildEnsureBinaries({
-    targetRoot: dir
+    targetRoot: dir,
   });
 
   return {
-    aiaxd: path.resolve(dir, "bin", "aiax"),
-    gorc: path.resolve(dir, "bin", "gorc"),
+    aiaxd: path.resolve(dir, 'bin', 'aiax'),
+    gorc: path.resolve(dir, 'bin', 'gorc'),
   };
 }
 
@@ -27,7 +27,7 @@ async function initNode(eth: EthWrapper, bin: Binaries, dir: string): Promise<No
   let node = {
     aiaxd: new AiaxdWrapper({
       binary: bin.aiaxd,
-      directory: path.resolve(dir, "aiaxd"),
+      directory: path.resolve(dir, 'aiaxd'),
       peers: [],
       ports: {
         eth: eth.port,
@@ -41,11 +41,11 @@ async function initNode(eth: EthWrapper, bin: Binaries, dir: string): Promise<No
         rpc: 26657,
         pprof: 6060,
         p2p: 26656,
-      }
+      },
     }),
     gorc: new GorcWrapper({
       binary: bin.gorc,
-      directory: path.resolve(dir, "gorc"),
+      directory: path.resolve(dir, 'gorc'),
       gravity_contract: '',
       ports: {
         eth: eth.port,
@@ -53,7 +53,7 @@ async function initNode(eth: EthWrapper, bin: Binaries, dir: string): Promise<No
       },
       listen: {
         metrics: 3000,
-      }
+      },
     }),
     token: '',
     gravity: '',
@@ -62,13 +62,10 @@ async function initNode(eth: EthWrapper, bin: Binaries, dir: string): Promise<No
   procs.push(node.aiaxd);
   procs.push(node.gorc);
 
-  const aiax_token = node.token = await eth.deployAiaxToken();
-  console.log(`Deployed aiax token at ${aiax_token}`);
-
   const node_id = await node.aiaxd.init();
   console.log(`Inited node ${node_id}`);
 
-  node.aiaxd.initGenesis(aiax_token);
+  node.aiaxd.initGenesis();
   console.log(`Updated genesis`);
 
   const validator = await node.aiaxd.ensureValKey('validator');
@@ -101,10 +98,12 @@ async function initNode(eth: EthWrapper, bin: Binaries, dir: string): Promise<No
   await new Promise((resolve, _) => setTimeout(resolve, 5000));
   console.log(`Started aiaxd node`);
 
-  const gravity = node.gravity = await eth.deployGravity(node.aiaxd.opts.listen.rpc);
-  console.log(`Deployed gravity contract at ${gravity}`);
+  const gravity = await eth.deployGravityTest(node.aiaxd.opts.listen.rpc);
+  node.gravity = gravity.address;
+  node.token = await gravity.aiaxTokenAddress();
+  console.log(`Deployed gravity contract at ${gravity.address} aiax token at ${node.token}`);
 
-  node.gorc.opts.gravity_contract = gravity;
+  node.gorc.opts.gravity_contract = node.gravity;
   node.gorc.ensureConfig();
 
   await node.gorc.start('orchestrator', 'signer');
@@ -117,7 +116,7 @@ async function joinNode(eth: EthWrapper, bin: Binaries, dir: string, join: Node)
   let node = {
     aiaxd: new AiaxdWrapper({
       binary: bin.aiaxd,
-      directory: path.resolve(dir, "aiaxd"),
+      directory: path.resolve(dir, 'aiaxd'),
       peers: [`${join.aiaxd.node_id}@127.0.0.1:${join.aiaxd.opts.listen.p2p}`],
       ports: {
         eth: eth.port,
@@ -131,11 +130,11 @@ async function joinNode(eth: EthWrapper, bin: Binaries, dir: string, join: Node)
         rpc: 26657 + 10,
         pprof: 6060 + 10,
         p2p: 26656 + 10,
-      }
+      },
     }),
     gorc: new GorcWrapper({
       binary: bin.gorc,
-      directory: path.resolve(dir, "gorc"),
+      directory: path.resolve(dir, 'gorc'),
       gravity_contract: join.gravity,
       ports: {
         eth: eth.port,
@@ -143,7 +142,7 @@ async function joinNode(eth: EthWrapper, bin: Binaries, dir: string, join: Node)
       },
       listen: {
         metrics: 3000 + 10,
-      }
+      },
     }),
     token: join.token,
     gravity: join.gravity,
@@ -161,7 +160,10 @@ async function joinNode(eth: EthWrapper, bin: Binaries, dir: string, join: Node)
   const validator = await node.aiaxd.ensureValKey('validator');
   console.log(`Created aiaxd validator key ${validator}`);
 
-  fs.copyFileSync(path.resolve(join.aiaxd.opts.directory, 'keyring-test', 'test_bank.info'), path.resolve(node.aiaxd.opts.directory, 'keyring-test', 'test_bank.info'));
+  fs.copyFileSync(
+    path.resolve(join.aiaxd.opts.directory, 'keyring-test', 'test_bank.info'),
+    path.resolve(node.aiaxd.opts.directory, 'keyring-test', 'test_bank.info')
+  );
   console.log(`Copied aiaxd test_bank key from node ${join.aiaxd.node_id}`);
 
   const orchestrator = await node.gorc.ensureCosmosKey('orchestrator');
@@ -286,7 +288,12 @@ async function testSendAiaxToExternalToken(eth: EthWrapper, node: Node, token_ad
   await node.aiaxd.sendTokens('test_bank', src, '1000000000000000000aaiax');
   console.log(`Deposited 1aiax to ${src}`);
 
-  await node.gorc.txCosmosToEth(`gravity${token_addr}`, 'test_testSendExternalTokenToAiax_dst', dst, '1000000000000000000');
+  await node.gorc.txCosmosToEth(
+    `gravity${token_addr}`,
+    'test_testSendExternalTokenToAiax_dst',
+    dst,
+    '1000000000000000000'
+  );
 
   console.log(`Sent cosmos-to-eth transaction, awaiting for balance to change`);
   while ((await eth.getErc20Balance(token_addr, dst)) === '0') {
@@ -300,16 +307,15 @@ async function testSendAiaxToExternalToken(eth: EthWrapper, node: Node, token_ad
 }
 
 async function singleNodeTest(opts: any) {
-  let base_dir = path.resolve(process.cwd(), "test_data");
+  let base_dir = path.resolve(process.cwd(), 'test_data');
   fs.rmSync(base_dir, { force: true, recursive: true });
 
   let bin = await build(base_dir);
-
   let eth = new EthWrapper(9545);
   procs.push(eth);
   await eth.start();
 
-  let node1 = await initNode(eth, bin, path.resolve(base_dir, "node1"));
+  let node1 = await initNode(eth, bin, path.resolve(base_dir, 'node1'));
 
   await testSendAiaxTokenToNative(eth, node1);
   await testSendNativeToAiaxToken(eth, node1);
@@ -322,7 +328,7 @@ async function singleNodeTest(opts: any) {
 }
 
 async function multiNodeTest(opts: any) {
-  let base_dir = path.resolve(process.cwd(), "test_data");
+  let base_dir = path.resolve(process.cwd(), 'test_data');
   fs.rmSync(base_dir, { force: true, recursive: true });
 
   let bin = await build(base_dir);
@@ -331,10 +337,10 @@ async function multiNodeTest(opts: any) {
   procs.push(eth);
   await eth.start();
 
-  let node1 = await initNode(eth, bin, path.resolve(base_dir, "node1"));
-  let node2 = await joinNode(eth, bin, path.resolve(base_dir, "node2"), node1);
+  let node1 = await initNode(eth, bin, path.resolve(base_dir, 'node1'));
+  let node2 = await joinNode(eth, bin, path.resolve(base_dir, 'node2'), node1);
 
-  console.log("Testnet is online, running for 60sec to be sure that valset is updated");
+  console.log('Testnet is online, running for 60sec to be sure that valset is updated');
   await new Promise((resolve, _) => setTimeout(resolve, 60000));
 
   await testSendAiaxTokenToNative(eth, node2);
@@ -352,10 +358,10 @@ function wrapStop(test: (any) => Promise<any>) {
     try {
       await test(opts);
     } catch (e) {
-      await Promise.allSettled(procs.map(p => p.stop()));
+      await Promise.allSettled(procs.map((p) => p.stop()));
       throw e;
     }
-    await Promise.allSettled(procs.map(p => p.stop()));
+    await Promise.allSettled(procs.map((p) => p.stop()));
   };
 }
 
