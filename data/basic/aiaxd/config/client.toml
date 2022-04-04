@@ -8,7 +8,7 @@
 # The network chain ID
 chain-id = "__CHAIN_ID__"
 # The keyring's backend, where the keys are stored (os|file|kwallet|pass|test|memory)
-keyring-backend = "test"
+keyring-backend = "file"
 # CLI output format (text|json)
 output = "json"
 # <host>:<port> to Tendermint RPC interface for this chain
