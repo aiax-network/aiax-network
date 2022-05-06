@@ -6,6 +6,7 @@ import { buildEnsureBinaries } from '../build';
 import { EthWrapper } from './wrappers/eth';
 import { AiaxdWrapper } from './wrappers/aiaxd';
 import { GorcWrapper } from './wrappers/gorc';
+import { getGravityNativeToken } from '../contract/utils';
 
 type Binaries = { aiaxd: string; gorc: string };
 type Node = { aiaxd: AiaxdWrapper; gorc: GorcWrapper; token: string; gravity: string };
@@ -100,7 +101,7 @@ async function initNode(eth: EthWrapper, bin: Binaries, dir: string): Promise<No
 
   const gravity = await eth.deployGravityTest(node.aiaxd.opts.listen.rpc);
   node.gravity = gravity.address;
-  node.token = await gravity.aiaxTokenAddress();
+  node.token = await getGravityNativeToken(gravity);
   console.log(`Deployed gravity contract at ${gravity.address} aiax token at ${node.token}`);
 
   node.gorc.opts.gravity_contract = node.gravity;
@@ -201,18 +202,38 @@ async function joinNode(eth: EthWrapper, bin: Binaries, dir: string, join: Node)
   return node;
 }
 
+async function testSendNativeToAiaxToken(eth: EthWrapper, node: Node) {
+  console.log('[testSendNativeToAiaxToken] Start');
+
+  const src = await node.gorc.ensureCosmosKey('test_native_a');
+  const dst = await node.gorc.ensureEthKey('test_native_b');
+
+  await node.aiaxd.sendTokens('test_bank', src, '2000000000000000000aaiax');
+  console.log(`Deposited 2aiax to ${src}`);
+
+  await node.gorc.txCosmosToEth('aaiax', 'test_native_a', dst, '1000000000000000000');
+
+  console.log(`Sent cosmos-to-eth transaction, awaiting for balance to change`);
+  while ((await eth.getErc20Balance(node.token, dst)) === '0') {
+    await new Promise((resolve, _) => setTimeout(resolve, 1000));
+  }
+
+  let balance = await eth.getErc20Balance(node.token, dst);
+  assert.equal(balance, '1000000000000000000');
+
+  console.log('[testSendNativeToAiaxToken] Ok');
+}
+
 async function testSendAiaxTokenToNative(eth: EthWrapper, node: Node) {
   console.log('[testSendAiaxTokenToNative] Start');
 
-  const src = await node.gorc.ensureEthKey('test_testSendAiaxTokenToNative_src');
-  const dst = await node.gorc.ensureCosmosKey('test_testSendAiaxTokenToNative_dst');
+  const src = await node.gorc.ensureEthKey('test_native_b');
+  const dst = await node.gorc.ensureCosmosKey('test_native_c');
 
   await eth.depositEth(src, '1000000000000000000');
   console.log(`Deposited 1eth to ${src}`);
-  await eth.depositErc20(node.token, src, '1000000000000000000');
-  console.log(`Deposited erc20 1aiax to ${src}`);
 
-  await node.gorc.txEthToCosmos(node.token, 'test_testSendAiaxTokenToNative_src', dst, '1000000000000000000');
+  await node.gorc.txEthToCosmos(node.token, 'test_native_b', dst, '1000000000000000000');
 
   console.log(`Sent eth-to-cosmos transaction, awaiting for balance to change`);
   while ((await node.aiaxd.getBalances(dst)).balances.length == 0) {
@@ -224,30 +245,6 @@ async function testSendAiaxTokenToNative(eth: EthWrapper, node: Node) {
   assert.equal(balance.amount, '1000000000000000000');
 
   console.log('[testSendAiaxTokenToNative] Ok');
-}
-
-async function testSendNativeToAiaxToken(eth: EthWrapper, node: Node) {
-  console.log('[testSendNativeToAiaxToken] Start');
-
-  const src = await node.gorc.ensureCosmosKey('test_testSendNativeToAiaxToken_src');
-  const dst = await node.gorc.ensureEthKey('test_testSendNativeToAiaxToken_dst');
-
-  await eth.depositErc20(node.token, node.gravity, '1000000000000000000');
-  console.log(`Deposited erc20 1aiax to eth gravity contract`);
-  await node.aiaxd.sendTokens('test_bank', src, '2000000000000000000aaiax');
-  console.log(`Deposited 2aiax to ${src}`);
-
-  await node.gorc.txCosmosToEth('aaiax', 'test_testSendNativeToAiaxToken_src', dst, '1000000000000000000');
-
-  console.log(`Sent cosmos-to-eth transaction, awaiting for balance to change`);
-  while ((await eth.getErc20Balance(node.token, dst)) === '0') {
-    await new Promise((resolve, _) => setTimeout(resolve, 1000));
-  }
-
-  let balance = await eth.getErc20Balance(node.token, dst);
-  assert.equal(balance, '1000000000000000000');
-
-  console.log('[testSendNativeToAiaxToken] Ok');
 }
 
 async function testSendExternalTokenToAiax(eth: EthWrapper, node: Node, token_addr: string) {
@@ -317,8 +314,8 @@ async function singleNodeTest(opts: any) {
 
   let node1 = await initNode(eth, bin, path.resolve(base_dir, 'node1'));
 
-  console.log('Testnet is online, running for 10sec to be sure that all events are processed');
-  await new Promise((resolve, _) => setTimeout(resolve, 10000));
+  console.log('Testnet is online, running for 30sec to be sure that all events are processed');
+  await new Promise((resolve, _) => setTimeout(resolve, 30000));
 
   await testSendNativeToAiaxToken(eth, node1);
   await testSendAiaxTokenToNative(eth, node1);

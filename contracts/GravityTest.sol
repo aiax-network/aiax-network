@@ -44,7 +44,6 @@ contract GravityTest is ReentrancyGuard {
 	// These are set once at initialization
 	bytes32 public state_gravityId;
 	uint256 public state_powerThreshold;
-	address public aiaxTokenAddress;
 
 	// TransactionBatchExecutedEvent and SendToCosmosEvent both include the field _eventNonce.
 	// This is incremented every time one of these events is emitted. It is checked by the
@@ -65,8 +64,7 @@ contract GravityTest is ReentrancyGuard {
 		uint256 _eventNonce,
 		string _name,
 		string _symbol,
-		uint8  _decimals,
-		bool   _native
+		uint8  _decimals
 	);
 	event ERC20DeployedEvent(
 		// FYI: Can't index on a string without doing a bunch of weird stuff
@@ -539,7 +537,6 @@ contract GravityTest is ReentrancyGuard {
 		string memory name = IERC20Metadata(_tokenContract).name();
 		string memory symbol = IERC20Metadata(_tokenContract).symbol();
 		uint8 decimals = IERC20Metadata(_tokenContract).decimals();
-		bool native = _tokenContract == aiaxTokenAddress;
 
 		emit SendToCosmosEvent(
 			_tokenContract,
@@ -549,8 +546,7 @@ contract GravityTest is ReentrancyGuard {
 			state_lastEventNonce,
 			name,
 			symbol,
-			decimals,
-			native
+			decimals
 		);
 	}
 
@@ -581,25 +577,6 @@ contract GravityTest is ReentrancyGuard {
 			_decimals,
 			state_lastEventNonce
 		);
-	}
-
-	function deployNativeERC20() private returns (CosmosERC20) {
-		// Deploy token and send event to cosmos blockchain
-		CosmosERC20 erc20 = new CosmosERC20(address(this), "Aiax token", "AXX", 18);
-		aiaxTokenAddress = address(erc20);
-
-		// Fire an event to let the Cosmos module know
-		state_lastEventNonce = state_lastEventNonce.add(1);
-		emit ERC20DeployedEvent(
-			"aaiax", // denom_metadata.0.base from cosmos genesis
-			aiaxTokenAddress,
-			"aiax", // denom_metadata.0.display from cosmos genesis
-			"aiax", // denom_metadata.0.display from cosmos genesis
-			erc20.decimals(),
-			state_lastEventNonce
-		);
-
-		return erc20;
 	}
 
 	constructor(
@@ -640,10 +617,19 @@ contract GravityTest is ReentrancyGuard {
 		// LOGS
 		emit ValsetUpdatedEvent(state_lastValsetNonce, state_lastEventNonce, _validators, _powers);
 
-		// Deploy native token and send event to cosmos blockchain
-		CosmosERC20 erc20 = deployNativeERC20();
 
-		// Add some tokens for tests
-		erc20.transfer(0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65, 2**128);
+		// Deploy native token and send event to cosmos blockchain
+		CosmosERC20 erc20 = new CosmosERC20(address(this), "Aiax token", "AXX", 18);
+
+		// Fire an event to let the Cosmos module know
+		state_lastEventNonce = state_lastEventNonce.add(1);
+		emit ERC20DeployedEvent(
+			"aaiax", // denom_metadata.0.base from cosmos genesis
+			address(erc20),
+			"aiax", // denom_metadata.0.display from cosmos genesis
+			"aiax", // denom_metadata.0.display from cosmos genesis
+			erc20.decimals(),
+			state_lastEventNonce
+		);
 	}
 }
