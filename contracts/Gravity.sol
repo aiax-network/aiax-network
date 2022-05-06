@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./CosmosToken.sol";
-import "./ERC20AiaxToken.sol";
 
 pragma experimental ABIEncoderV2;
 
@@ -45,7 +44,6 @@ contract Gravity is ReentrancyGuard {
 	// These are set once at initialization
 	bytes32 public state_gravityId;
 	uint256 public state_powerThreshold;
-  address public aiaxTokenAddress;
 
 	// TransactionBatchExecutedEvent and SendToCosmosEvent both include the field _eventNonce.
 	// This is incremented every time one of these events is emitted. It is checked by the
@@ -66,8 +64,7 @@ contract Gravity is ReentrancyGuard {
 		uint256 _eventNonce,
 		string _name,
 		string _symbol,
-		uint8  _decimals,
-    bool   _native
+		uint8  _decimals
 	);
 	event ERC20DeployedEvent(
 		// FYI: Can't index on a string without doing a bunch of weird stuff
@@ -507,7 +504,6 @@ contract Gravity is ReentrancyGuard {
 		string memory name = IERC20Metadata(_tokenContract).name();
 		string memory symbol = IERC20Metadata(_tokenContract).symbol();
 		uint8 decimals = IERC20Metadata(_tokenContract).decimals();
-    bool native = _tokenContract == aiaxTokenAddress;
 
 		emit SendToCosmosEvent(
 			_tokenContract,
@@ -517,8 +513,7 @@ contract Gravity is ReentrancyGuard {
 			state_lastEventNonce,
 			name,
 			symbol,
-			decimals,
-      native
+			decimals
 		);
 	}
 
@@ -585,11 +580,23 @@ contract Gravity is ReentrancyGuard {
 		state_gravityId = _gravityId;
 		state_powerThreshold = _powerThreshold;
 		state_lastValsetCheckpoint = newCheckpoint;
-    
-    ERC20AiaxToken axx = new ERC20AiaxToken(address(this));
-    aiaxTokenAddress = address(axx);
 
 		// LOGS
 		emit ValsetUpdatedEvent(state_lastValsetNonce, state_lastEventNonce, _validators, _powers);
+
+
+		// Deploy native token and send event to cosmos blockchain
+		CosmosERC20 erc20 = new CosmosERC20(address(this), "Aiax token", "AXX", 18);
+
+		// Fire an event to let the Cosmos module know
+		state_lastEventNonce = state_lastEventNonce.add(1);
+		emit ERC20DeployedEvent(
+			"aaiax", // denom_metadata.0.base from cosmos genesis
+			address(erc20),
+			"aiax", // denom_metadata.0.display from cosmos genesis
+			"aiax", // denom_metadata.0.display from cosmos genesis
+			erc20.decimals(),
+			state_lastEventNonce
+		);
 	}
 }

@@ -22,7 +22,6 @@ import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 
 interface GravityTestInterface extends ethers.utils.Interface {
   functions: {
-    "aiaxTokenAddress()": FunctionFragment;
     "deployERC20(string,string,string,uint8)": FunctionFragment;
     "lastBatchNonce(address)": FunctionFragment;
     "lastLogicCallNonce(bytes32)": FunctionFragment;
@@ -42,10 +41,6 @@ interface GravityTestInterface extends ethers.utils.Interface {
     "updateValset(address[],uint256[],uint256,address[],uint256[],uint256,uint8[],bytes32[],bytes32[])": FunctionFragment;
   };
 
-  encodeFunctionData(
-    functionFragment: "aiaxTokenAddress",
-    values?: undefined
-  ): string;
   encodeFunctionData(
     functionFragment: "deployERC20",
     values: [string, string, string, BigNumberish]
@@ -165,10 +160,6 @@ interface GravityTestInterface extends ethers.utils.Interface {
   ): string;
 
   decodeFunctionResult(
-    functionFragment: "aiaxTokenAddress",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "deployERC20",
     data: BytesLike
   ): Result;
@@ -237,7 +228,7 @@ interface GravityTestInterface extends ethers.utils.Interface {
   events: {
     "ERC20DeployedEvent(string,address,string,string,uint8,uint256)": EventFragment;
     "LogicCallEvent(bytes32,uint256,bytes,uint256)": EventFragment;
-    "SendToCosmosEvent(address,address,bytes32,uint256,uint256,string,string,uint8,bool)": EventFragment;
+    "SendToCosmosEvent(address,address,bytes32,uint256,uint256,string,string,uint8)": EventFragment;
     "TransactionBatchExecutedEvent(uint256,address,uint256)": EventFragment;
     "ValsetUpdatedEvent(uint256,uint256,address[],uint256[])": EventFragment;
   };
@@ -265,14 +256,6 @@ export class GravityTest extends Contract {
   interface: GravityTestInterface;
 
   functions: {
-    aiaxTokenAddress(overrides?: CallOverrides): Promise<{
-      0: string;
-    }>;
-
-    "aiaxTokenAddress()"(overrides?: CallOverrides): Promise<{
-      0: string;
-    }>;
-
     deployERC20(
       _cosmosDenom: string,
       _name: string,
@@ -560,10 +543,6 @@ export class GravityTest extends Contract {
     ): Promise<ContractTransaction>;
   };
 
-  aiaxTokenAddress(overrides?: CallOverrides): Promise<string>;
-
-  "aiaxTokenAddress()"(overrides?: CallOverrides): Promise<string>;
-
   deployERC20(
     _cosmosDenom: string,
     _name: string,
@@ -807,10 +786,6 @@ export class GravityTest extends Contract {
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    aiaxTokenAddress(overrides?: CallOverrides): Promise<string>;
-
-    "aiaxTokenAddress()"(overrides?: CallOverrides): Promise<string>;
-
     deployERC20(
       _cosmosDenom: string,
       _name: string,
@@ -1079,8 +1054,7 @@ export class GravityTest extends Contract {
       _eventNonce: null,
       _name: null,
       _symbol: null,
-      _decimals: null,
-      _native: null
+      _decimals: null
     ): EventFilter;
 
     TransactionBatchExecutedEvent(
@@ -1098,10 +1072,6 @@ export class GravityTest extends Contract {
   };
 
   estimateGas: {
-    aiaxTokenAddress(overrides?: CallOverrides): Promise<BigNumber>;
-
-    "aiaxTokenAddress()"(overrides?: CallOverrides): Promise<BigNumber>;
-
     deployERC20(
       _cosmosDenom: string,
       _name: string,
@@ -1348,12 +1318,6 @@ export class GravityTest extends Contract {
   };
 
   populateTransaction: {
-    aiaxTokenAddress(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    "aiaxTokenAddress()"(
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     deployERC20(
       _cosmosDenom: string,
       _name: string,

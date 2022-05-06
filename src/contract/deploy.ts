@@ -9,6 +9,7 @@ import env from '../env';
 import { gorcConfigApply, gorcEthKeyShow } from '../gorc';
 import { Gravity } from '../typechain';
 import { valueOrFile } from '../utils';
+import { getGravityNativeToken } from './utils';
 
 interface DeployOpts {
   cosmosNode?: string;
@@ -148,7 +149,7 @@ export async function contractGravityDeploy(
   const gravity = (await factory.deploy(gravityId, vote_power, eth_addresses, powers)) as unknown as Gravity;
   await gravity.deployed();
 
-  console.log(`contract deploy | ${name} deployed at ${gravity.address} aiax token: ${await gravity.aiaxTokenAddress()}`);
+  console.log(`contract deploy | ${name} deployed at ${gravity.address} aiax token: ${await getGravityNativeToken(gravity)}`);
   if (opts.updateState) {
     await submitGravityAddress(gravity.address);
   }
