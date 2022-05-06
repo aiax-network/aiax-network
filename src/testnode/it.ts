@@ -317,8 +317,11 @@ async function singleNodeTest(opts: any) {
 
   let node1 = await initNode(eth, bin, path.resolve(base_dir, 'node1'));
 
-  await testSendAiaxTokenToNative(eth, node1);
+  console.log('Testnet is online, running for 10sec to be sure that all events are processed');
+  await new Promise((resolve, _) => setTimeout(resolve, 10000));
+
   await testSendNativeToAiaxToken(eth, node1);
+  await testSendAiaxTokenToNative(eth, node1);
 
   const external_token = await eth.deployExternalToken();
   console.log(`Deployed external etc20 token at ${external_token}`);
@@ -340,11 +343,11 @@ async function multiNodeTest(opts: any) {
   let node1 = await initNode(eth, bin, path.resolve(base_dir, 'node1'));
   let node2 = await joinNode(eth, bin, path.resolve(base_dir, 'node2'), node1);
 
-  console.log('Testnet is online, running for 60sec to be sure that valset is updated');
+  console.log('Testnet is online, running for 60sec to be sure that all events are processed');
   await new Promise((resolve, _) => setTimeout(resolve, 60000));
 
-  await testSendAiaxTokenToNative(eth, node2);
   await testSendNativeToAiaxToken(eth, node2);
+  await testSendAiaxTokenToNative(eth, node2);
 
   const external_token = await eth.deployExternalToken();
   console.log(`Deployed external etc20 token at ${external_token}`);
