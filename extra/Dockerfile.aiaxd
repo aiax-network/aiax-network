@@ -3,9 +3,8 @@
 ARG VERSION dev
 ARG GITHASH dev
 
-# Step 1: prepare golang alpine image to have all necessary tools
-FROM golang:1.17-alpine as builder
-RUN apk add gcc musl-dev linux-headers
+# Step 1: prepare golang bullseye image to have all necessary tools
+FROM golang:1.17-bullseye as builder
 
 
 # Step 2: add go.mod and go.sum files and download dependencies for docker layers cache
@@ -40,7 +39,8 @@ RUN export TM_CORE_SEM_VER=$(go list -m github.com/tendermint/tendermint | grep 
 
 
 # Step 5: copy build artifact to the final image
-FROM alpine as runtime
-WORKDIR /aiax
-COPY --from=builder /app/aiax-node/aiaxd .
-CMD ./aiaxd
+FROM debian:bullseye-slim as runtime
+
+COPY --from=builder /app/aiax-node/aiaxd /aiax/bin/aiaxd
+
+ENTRYPOINT ["/aiax/bin/aiaxd", "--home", "/aiax/data/aiaxd"]

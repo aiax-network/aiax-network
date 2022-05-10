@@ -4,21 +4,21 @@ services:
     build:
       context: ./extra/
       dockerfile: ./Dockerfile.gorc
-    command: ./gorc -c /aiax/data/config.toml orchestrator start --cosmos-key=orchestrator --ethereum-key=signer
+    command: orchestrator start --cosmos-key=orchestrator --ethereum-key=signer
     volumes:
-      - ./data/local/gorc:/aiax/data
+      - ./data/local/gorc:/aiax/data/gorc
     restart: always
 
   aiaxd:
     build:
       context: ./extra/
       dockerfile: ./Dockerfile.aiaxd
-    command: ./aiaxd --home /aiax/data start
+    command: start
     ports:
       - 9545:8545
       - 26657:26657
     volumes:
-      - ./data/local/aiaxd:/aiax/data
+      - ./data/local/aiaxd:/aiax/data/aiaxd
     restart: always
 
   eth:

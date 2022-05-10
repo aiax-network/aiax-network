@@ -58,6 +58,7 @@ RUN cargo build --release --bin gorc
 
 # Step 6: copy build artifact to the final image
 FROM debian:bullseye-slim as runtime
-WORKDIR /aiax
-COPY --from=builder /app/gravity-bridge/orchestrator/target/release/gorc .
-CMD ./gorc
+
+COPY --from=builder /app/gravity-bridge/orchestrator/target/release/gorc /aiax/bin/gorc
+
+ENTRYPOINT ["/aiax/bin/gorc", "-c", "/aiax/data/gorc/config.toml"]

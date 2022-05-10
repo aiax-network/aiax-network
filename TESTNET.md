@@ -5,8 +5,8 @@
     git clone https://github.com/aiax-network/aiax-network.git
     cd aiax-network/extra
     git submodule update --init --recursive
-    sudo docker build -f Dockerfile.aiaxd --rm -t aiaxd .
-    sudo docker build -f Dockerfile.gorc --rm -t gorc .
+    sudo docker build -f Dockerfile.aiaxd --rm -t aiax-aiaxd .
+    sudo docker build -f Dockerfile.gorc --rm -t aiax-gorc .
     ```
 3. Prepare docker networks:
     ```sh
@@ -21,11 +21,11 @@
 5. Some useful aliases for node setup:
     ```sh
     # Commands for easy running command in a new container (useful for configuration)
-    alias aiaxd="sudo docker-compose run -u $UID --rm aiaxd ./aiaxd --home /aiax/data"
-    alias gorc="sudo docker-compose run -u $UID --rm gorc ./gorc -c /aiax/data/config.toml"
+    alias aiaxd="sudo docker-compose run -u $UID --rm aiaxd"
+    alias gorc="sudo docker-compose run -u $UID --rm gorc"
     # Commands for running commands in online containers (useful for transactions)
-    alias in_aiaxd="sudo docker-compose exec aiaxd ./aiaxd --home /aiax/data"
-    alias in_gorc="sudo docker-compose exec gorc ./gorc -c /aiax/data/config.toml"
+    alias in_aiaxd="sudo docker-compose exec -it aiaxd"
+    alias in_gorc="sudo docker-compose exec -it gorc"
     ```
 
 
@@ -95,20 +95,20 @@ version: "3"
 
 services:
   gorc:
-    image: gorc
-    command: ./gorc -c /aiax/data/config.toml orchestrator start --cosmos-key=orchestrator --ethereum-key=signer
+    image: aiax-gorc
+    command: orchestrator start --cosmos-key=orchestrator --ethereum-key=signer
     volumes:
-      - ./data/gorc:/aiax/data
+      - ./data/gorc:/aiax/data/gorc
     restart: unless-stopped
     networks:
       - default
       - aiax_testnet_gorc
 
   aiaxd:
-    image: aiaxd
-    command: ./aiaxd --home /aiax/data start
+    image: aiax-aiaxd
+    command: start
     volumes:
-      - ./data/aiaxd:/aiax/data
+      - ./data/aiaxd:/aiax/data/aiaxd
     restart: unless-stopped
     networks:
       - default
@@ -144,7 +144,7 @@ export validator=aiax1s6ulzlgfghcs3qddlqvg26u0upaecvmu8y2ezv
 export validator_valoper=aiaxvaloper1s6ulzlgfghcs3qddlqvg26u0upaecvmu82mx8l
 
 # Create faucet key
-aiaxd keys add faucet && aiaxd keys unsafe-export-eth-key faucet --keyring-backend test
+aiaxd keys add faucet && aiaxd keys unsafe-export-eth-key faucet --keyring-backend file
 export faucet=aiax19z2q7jk44nmza2drgd4a8gla9tznwzczaanjkt
 export faucet_key=6A8EF19...
 
@@ -215,9 +215,13 @@ aiaxd config chain-id "$chain_id"
 aiaxd init localnode --chain-id "$chain_id"
 export node_id=0e0a54338b48f18d7663d4b64f5e57cd018d5d85
 
+# Edit data/gorc/config.toml
+# [gravity]
+# contract = '$gravity'
+
 # Edit data/aiaxd/config/config.toml
 # [p2p]
-# persistent_peers = [$initial_node_id@node1_aiaxd_1:26656]
+# persistent_peers = "$initial_node_id@node1_aiaxd_1:26656"
 
 # Copy genesis from initial node
 cp ../node1/data/aiaxd/node/genesis.json ./data/aiaxd/node/genesis.json
@@ -237,8 +241,8 @@ export signer=0x72f3d403FD03D4e409C57fF317C950248398036f
 
 # Deposit some ethereum to signer
 # Deposit 1000000000000000000000aaiax to validator and orchestrator
-sudo docker exec node1_aiaxd_1 ./aiaxd --home /aiax/data tx bank send faucet "$validator" 1000000000000000000000aaiax -y
-sudo docker exec node1_aiaxd_1 ./aiaxd --home /aiax/data tx bank send faucet "$orchestrator" 1000000000000000000000aaiax -y
+sudo docker exec -it node1_aiaxd_1 tx bank send faucet "$validator" 1000000000000000000000aaiax -y
+sudo docker exec -it node1_aiaxd_1 tx bank send faucet "$orchestrator" 1000000000000000000000aaiax -y
 
 # Run aiaxd node
 sudo docker-compose up -d aiaxd
@@ -255,7 +259,7 @@ in_aiaxd tx staking create-validator \
     --from validator --amount 1000000000000000000000aaiax --pubkey "$val_key" \
     --commission-rate 0.10 --commission-max-rate 0.20 \
     --commission-max-change-rate 0.01 --min-self-delegation 1 \
-    -y
+    -y --keyring-backend file
 
 # Sign delegate keys
 gorc sign-delegate-keys --args signer "$validator_valoper"
@@ -265,8 +269,6 @@ export eth_sign=0xe021a4c9c7b3841c6967e090cb909bfe59f09139e4144372800e5110a486b7
 in_aiaxd tx gravity set-delegate-keys --from validator \
     "$validator_valoper" "$orchestrator" "$signer" "$eth_sign" \
     -y
-
-# Edit `data/gorc/config.toml` (set gravity address)
 
 # Run gorc orchestrator
 sudo docker-compose up -d gorc
