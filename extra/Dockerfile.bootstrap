@@ -1,0 +1,21 @@
+FROM aiax-aiaxd as aiaxd
+FROM aiax-gorc as gorc
+
+
+FROM rust:1.58.1-bullseye as builder
+RUN cargo install lazy_static || true
+
+WORKDIR /app
+COPY ./bootstrap ./
+RUN cargo build
+
+
+FROM debian:bullseye-slim as runtime
+
+COPY --from=aiaxd /aiax/bin/aiaxd /aiax/bin/aiaxd
+COPY --from=gorc /aiax/bin/gorc /aiax/bin/gorc
+
+COPY --from=builder /app/assets /aiax/bootstrap/assets
+COPY --from=builder /app/target/debug/bootstrap /aiax/bin/bootstrap
+
+CMD /aiax/bin/bootstrap

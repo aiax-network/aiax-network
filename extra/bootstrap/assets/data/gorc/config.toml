@@ -1,0 +1,18 @@
+keystore = '/aiax/data/gorc/keystore'
+
+[gravity]
+
+contract = '^$^$GRAVITY_ADDRESS^$^$'
+fees_denom = 'aaiax'
+
+[ethereum]
+
+key_derivation_path = "m/44'/60'/0'/0/0"
+rpc = 'http://eth:8545'
+
+[cosmos]
+
+grpc = 'http://aiaxd:9090'
+key_derivation_path = "m/44'/118'/0'/0/0"
+prefix = 'aiax'
+gas_price = { amount = 1000, denom = 'aaiax' }
