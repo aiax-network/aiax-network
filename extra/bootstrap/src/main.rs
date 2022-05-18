@@ -37,6 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     if state.1.stage == Stage::Empty {
+        // TODO: Erase only aiaxd and gorc directories
         fs_extra::dir::create_all(data_dir.join("data"), true).unwrap();
 
         fs_extra::dir::copy(
@@ -141,20 +142,38 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("Signer is {}", state.1.signer.as_ref().unwrap());
     }
 
-    let mut node = aiaxd.start();
+    let node = std::sync::Arc::new(std::sync::Mutex::new(
+        aiaxd.start(data_dir.join("./aiaxd.stderr.log")),
+    ));
     let transport = web3::transports::Http::new("http://127.0.0.1:8545/").unwrap();
     let web3 = web3::Web3::new(transport);
 
     {
+        let node = node.clone();
+        ctrlc::set_handler(move || {
+            println!("Received SIGINT, killing aiaxd...");
+            let mut node = node.lock().unwrap();
+            node.kill().unwrap();
+            node.wait().unwrap();
+            std::process::exit(1);
+        })
+        .ok();
+    }
+
+    {
         println!("Syncing blockchain...");
 
-        while node.try_wait().unwrap() == None {
+        while node.lock().unwrap().try_wait().unwrap() == None {
             if let Ok(res) = web3.eth().syncing().await {
                 if res == web3::types::SyncState::NotSyncing {
                     break;
                 }
             }
             std::thread::sleep(std::time::Duration::from_secs_f32(0.1f32));
+        }
+
+        if node.lock().unwrap().try_wait().unwrap() != None {
+            panic!("Aiaxd node exited");
         }
 
         println!("Synced");
@@ -166,11 +185,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             vals.into_iter().find(|s| s.starts_with("0x")).unwrap()
         };
 
-        println!("Awaiting balance change for validator");
+        println!("Awaiting balance of 1000 AXX for validator");
 
         let amount = {
             let mut balance = 0;
-            while balance == 0 {
+            while balance < 1000000000000000000000u128 {
                 balance = web3
                     .eth()
                     .balance(val.parse().unwrap(), None)
@@ -178,12 +197,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .unwrap()
                     .as_u128();
             }
-            format!("{}aaiax", balance)
+            format!("{}aaiax", 1000000000000000000000u128)
         };
 
         println!("Creating validator with {}", amount);
 
-        aiaxd.create_validator("validator", &amount);
+        let tx = aiaxd.create_validator("validator", &amount);
+
+        println!("Create staking validator tx {}", tx);
 
         println!("{} Create staking validator", o_ok);
 
@@ -205,13 +226,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         println!("Setting gravity delegate keys");
 
-        aiaxd.set_delegate_keys(
+        let tx = aiaxd.set_delegate_keys(
             "validator",
             &valoper,
             state.1.orchestrator.as_ref().unwrap(),
             state.1.signer.as_ref().unwrap(),
             &sign,
         );
+
+        println!("Set gravity delegate keys tx {}", tx);
 
         println!("{} Set gravity delegate keys", o_ok);
 
@@ -221,8 +244,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("{} Set gravity delegate keys", o_skip);
     }
 
-    node.kill().ok();
-    node.wait().ok();
+    let mut node = node.lock().unwrap();
+    node.kill().unwrap();
+    node.wait().unwrap();
 
     Ok(())
 }

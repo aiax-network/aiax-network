@@ -46,13 +46,21 @@ impl Aiaxd {
         output
     }
 
-    pub fn start(&self) -> std::process::Child {
+    pub fn start(&self, stderr: std::path::PathBuf) -> std::process::Child {
+        let stderr = std::fs::OpenOptions::new()
+            .create(true)
+            .truncate(true)
+            .write(true)
+            .open(stderr)
+            .unwrap();
+
         std::process::Command::new(&self.bin)
             .args(["--home", &self.home.to_string_lossy()])
             .args(["start"])
             .stdin(std::process::Stdio::null())
             .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null())
+            // .stderr(std::process::Stdio::null())
+            .stderr(std::process::Stdio::from(stderr))
             .spawn()
             .unwrap()
     }
@@ -169,9 +177,6 @@ impl Aiaxd {
             ],
             &format!("{}\n", self.password),
         );
-        
-        println!("{}", String::from_utf8_lossy(&output.stdout));
-        println!("{}", String::from_utf8_lossy(&output.stderr));
 
         let data: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
         let tx = data["txhash"].as_str().unwrap();
@@ -203,9 +208,6 @@ impl Aiaxd {
             ],
             &format!("{}\n", self.password),
         );
-
-        println!("{}", String::from_utf8_lossy(&output.stdout));
-        println!("{}", String::from_utf8_lossy(&output.stderr));
 
         let data: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
         let tx = data["txhash"].as_str().unwrap();
