@@ -1,7 +1,7 @@
 # When building pass docker args to set right aiax-node version and githash in cosmos-sdk settings
 
-ARG VERSION dev
-ARG GITHASH dev
+ARG VERSION=dev
+ARG GITHASH=dev
 
 # Step 1: prepare golang bullseye image to have all necessary tools
 FROM golang:1.17-bullseye as builder
