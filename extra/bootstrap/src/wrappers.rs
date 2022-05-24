@@ -82,7 +82,10 @@ impl Aiaxd {
                 let data: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
                 let code = data["code"].as_u64().unwrap();
                 let height = data["height"].as_str().unwrap();
-                if code == 0 && height != "0" {
+                if height != "0" {
+                    if code != 0 {
+                        panic!("Error tx: {}", String::from_utf8_lossy(&output.stdout));
+                    }
                     return;
                 }
             } else {
@@ -157,6 +160,8 @@ impl Aiaxd {
                 "tx",
                 "staking",
                 "create-validator",
+                "--gas",
+                "auto",
                 "--from",
                 key,
                 "--amount",
@@ -198,6 +203,8 @@ impl Aiaxd {
                 "tx",
                 "gravity",
                 "set-delegate-keys",
+                "--gas",
+                "auto",
                 "--from",
                 key,
                 valoper,
