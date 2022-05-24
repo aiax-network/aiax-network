@@ -308,6 +308,18 @@ export class AiaxdWrapper {
     ).trim();
   }
 
+  async getErc20Decimals(token_addr: string): Promise<any> {
+    return (
+      await processRunGetOutput('eth', [
+        'contract:call',
+        '--network',
+        `http://127.0.0.1:${this.opts.listen.json_rpc}`,
+        `erc20@${token_addr}`,
+        `decimals()`,
+      ])
+    ).trim();
+  }
+
   async getTransaction(hash: string): Promise<any> {
     return JSON.parse(await processRunGetOutput(this.opts.binary, [
       "--home",

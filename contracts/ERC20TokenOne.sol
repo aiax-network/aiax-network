@@ -10,4 +10,8 @@ contract ERC20TokenOne is ERC20 {
     _mint(0x90F79bf6EB2c4f870365E785982E1f101E93b906, 10000);
     _mint(0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65, 2**255);
   }
+
+  function decimals() public view virtual override returns (uint8) {
+    return 6;
+  }
 }
