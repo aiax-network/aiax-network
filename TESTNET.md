@@ -21,11 +21,11 @@
 5. Some useful aliases for node setup:
     ```sh
     # Commands for easy running command in a new container (useful for configuration)
-    alias aiaxd="sudo docker-compose run -u $UID --rm aiaxd"
-    alias gorc="sudo docker-compose run -u $UID --rm gorc"
+    alias aiaxd="sudo docker-compose run --rm aiaxd"
+    alias gorc="sudo docker-compose run --rm gorc"
     # Commands for running commands in online containers (useful for transactions)
-    alias in_aiaxd="sudo docker-compose exec -it aiaxd"
-    alias in_gorc="sudo docker-compose exec -it gorc"
+    alias in_aiaxd="sudo docker-compose exec -it aiaxd /aiax/bin/aiaxd --home /aiax/data/aiaxd"
+    alias in_gorc="sudo docker-compose exec -it gorc /aiax/bin/gorc -c /aiax/data/gorc/config.toml"
     ```
 
 
@@ -159,8 +159,11 @@ export signer=0x2890a823E0Af6DC68eFaCa0af065e3d8100Fcb04
 # Deposit some ethereum to signer
 
 # Mint some aaiax in genesis
+# Mint 1000000000000000000000aaiax (1000 AXX) to validator and orchestrator
+# Here validator needs 1000 AXX to pass the threshold and orchestrator needs coins to just create orchestrating transactions
 aiaxd add-genesis-account "$validator" 1000000000000000000000aaiax
 aiaxd add-genesis-account "$orchestrator" 1000000000000000000000aaiax
+# Mint a lot of aaiax to faucet to have some coins in testnet for testing
 aiaxd add-genesis-account "$faucet" 1000000000000000000000000000000000000000000aaiax
 
 # Sign delegate keys
@@ -240,9 +243,10 @@ gorc keys eth add signer
 export signer=0x72f3d403FD03D4e409C57fF317C950248398036f
 
 # Deposit some ethereum to signer
-# Deposit 1000000000000000000000aaiax to validator and orchestrator
-sudo docker exec -it node1_aiaxd_1 tx bank send faucet "$validator" 1000000000000000000000aaiax -y
-sudo docker exec -it node1_aiaxd_1 tx bank send faucet "$orchestrator" 1000000000000000000000aaiax -y
+# Deposit 1000000000000000000000aaiax (1000 AXX) to validator and orchestrator
+# Here validator needs 1000 AXX to pass the threshold and orchestrator needs coins to just create orchestrating transactions
+(cd ../node1 && in_aiaxd tx bank send faucet "$validator" 1000000000000000000000aaiax -y)
+(cd ../node1 && in_aiaxd tx bank send faucet "$orchestrator" 1000000000000000000000aaiax -y)
 
 # Run aiaxd node
 sudo docker-compose up -d aiaxd
