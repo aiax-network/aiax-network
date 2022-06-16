@@ -275,13 +275,13 @@ export class AiaxdWrapper {
       await processRunGetOutput('grpcurl', [
         '-plaintext',
         '-d',
-        `{"address":"${eth_token_addr}"}`,
+        `{"denom":"eth/${eth_token_addr}"}`,
         `127.0.0.1:${this.opts.listen.grpc}`,
-        'aiax.v1.Query/ERC20Address',
+        'aiaxbank.v1.Query/DenomRepresentation',
       ])
     );
 
-    return data.address;
+    return data.internalAddress;
   }
 
   async getErc20Balance(token_addr: string, addr: string): Promise<any> {

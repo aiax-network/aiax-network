@@ -271,7 +271,7 @@ async function testSendExternalTokenToAiax(eth: EthWrapper, node: Node, token_ad
   let balance = await node.aiaxd.getErc20Balance(mapping_addr, dst_eth);
   assert.equal(balance, '1000000000000000000');
   let name = await node.aiaxd.getErc20Name(mapping_addr);
-  assert.equal(name, `aiax/${token_addr}`);
+  assert.equal(name, `eth/${token_addr}`);
 
   console.log('[testSendExternalTokenToAiax] Ok');
 }
