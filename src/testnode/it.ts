@@ -286,10 +286,10 @@ async function testSendAiaxToExternalToken(eth: EthWrapper, node: Node, token_ad
   console.log(`Deposited 1aiax to ${src}`);
 
   await node.gorc.txCosmosToEth(
-    `gravity${token_addr}`,
+    `eth/${token_addr}`,
     'test_testSendExternalTokenToAiax_dst',
     dst,
-    '1000000000000000000'
+    '900000000000000000'
   );
 
   console.log(`Sent cosmos-to-eth transaction, awaiting for balance to change`);
@@ -298,7 +298,7 @@ async function testSendAiaxToExternalToken(eth: EthWrapper, node: Node, token_ad
   }
 
   let balance = await eth.getErc20Balance(token_addr, dst);
-  assert.equal(balance, '1000000000000000000');
+  assert.equal(balance, '900000000000000000');
 
   console.log('[testSendAiaxToExternalToken] Ok');
 }
@@ -324,7 +324,7 @@ async function singleNodeTest(opts: any) {
   console.log(`Deployed external etc20 token at ${external_token}`);
 
   await testSendExternalTokenToAiax(eth, node1, external_token);
-  // await testSendAiaxToExternalToken(eth, node1, external_token);
+  await testSendAiaxToExternalToken(eth, node1, external_token);
 }
 
 async function multiNodeTest(opts: any) {
@@ -350,7 +350,7 @@ async function multiNodeTest(opts: any) {
   console.log(`Deployed external etc20 token at ${external_token}`);
 
   await testSendExternalTokenToAiax(eth, node2, external_token);
-  // await testSendAiaxToExternalToken(eth, node1, external_token);
+  await testSendAiaxToExternalToken(eth, node2, external_token);
 }
 
 function wrapStop(test: (any) => Promise<any>) {
