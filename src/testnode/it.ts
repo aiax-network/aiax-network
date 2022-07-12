@@ -272,6 +272,8 @@ async function testSendExternalTokenToAiax(eth: EthWrapper, node: Node, token_ad
   assert.equal(balance, '1000000000000000000');
   let name = await node.aiaxd.getErc20Name(mapping_addr);
   assert.equal(name, `eth/${token_addr}`);
+  let decimals = await node.aiaxd.getErc20Decimals(mapping_addr);
+  assert.equal(decimals, '6');
 
   console.log('[testSendExternalTokenToAiax] Ok');
 }
