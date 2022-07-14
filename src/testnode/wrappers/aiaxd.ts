@@ -470,12 +470,13 @@ export class AiaxdWrapper {
     setJsonPath(gen, '/app_state/crisis/constant_fee', 'denom', denom);
     setJsonPath(gen, '/app_state/evm/params', 'evm_denom', denom);
     setJsonPath(gen, '/app_state/feemarket/params', 'no_base_fee', true);
-    setJsonPath(gen, '/app_state/gov/deposit_params/min_deposit/0', 'amount', `1000${'0'.repeat(18)}`);
+    setJsonPath(gen, '/app_state/gov/deposit_params/min_deposit/0', 'amount', `10${'0'.repeat(18)}`); // Was `1000${'0'.repeat(18)}`
     setJsonPath(gen, '/app_state/gov/deposit_params/min_deposit/0', 'denom', denom);
     setJsonPath(gen, '/app_state/gravity/params', 'average_block_time', '5000');
     setJsonPath(gen, '/app_state/gravity/params', 'average_ethereum_block_time', '14000');
     setJsonPath(gen, '/app_state/gravity/params', 'gravity_id', gravityId);
     setJsonPath(gen, '/app_state/mint/params', 'mint_denom', denom);
+    setJsonPath(gen, '/app_state/staking/params', 'unbonding_time', '21600s'); // Was '1814400s'
     setJsonPath(gen, '/app_state/staking/params', 'bond_denom', denom);
     setJsonPath(gen, '/consensus_params/block', 'max_gas', '10000000');
 

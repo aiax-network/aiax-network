@@ -16,7 +16,7 @@
     ```
 4. Create some `chain_id`, for example:
     ```sh
-    export chain_id=aiax_612938472-1
+    export chain_id=aiax_12344123324-1
     ```
 5. Some useful aliases for node setup:
     ```sh
@@ -24,8 +24,8 @@
     alias aiaxd="sudo docker-compose run --rm aiaxd"
     alias gorc="sudo docker-compose run --rm gorc"
     # Commands for running commands in online containers (useful for transactions)
-    alias in_aiaxd="sudo docker-compose exec -it aiaxd /aiax/bin/aiaxd --home /aiax/data/aiaxd"
-    alias in_gorc="sudo docker-compose exec -it gorc /aiax/bin/gorc -c /aiax/data/gorc/config.toml"
+    alias in_aiaxd="sudo docker-compose exec aiaxd /aiax/bin/aiaxd --home /aiax/data/aiaxd"
+    alias in_gorc="sudo docker-compose exec gorc /aiax/bin/gorc -c /aiax/data/gorc/config.toml"
     ```
 
 
@@ -129,32 +129,32 @@ networks:
 ## Setup initial node (`./deploy/node1`)
 ```sh
 # Copy configs
-cp -r $REPO/data/basic ./data
+cp -r $REPO/extra/bootstrap/assets/data ./data
 aiaxd config chain-id "$chain_id"
 
 # Initialize node
 aiaxd init localnode --chain-id "$chain_id"
-export node_id=3c56ac2379a9a3a4dd560f48bc01926aa6eb3bf8
+export node_id=723125b1aa39d592e24cd9841ea242f032d4c66c
 
 # Edit `data/aiaxd/node/genesis.json` (check `src/testnode/wrappers/aiaxd.ts:452`)
 
 # Create validator key
 aiaxd keys add validator && aiaxd keys show validator --bech val
-export validator=aiax1s6ulzlgfghcs3qddlqvg26u0upaecvmu8y2ezv
-export validator_valoper=aiaxvaloper1s6ulzlgfghcs3qddlqvg26u0upaecvmu82mx8l
+export validator=aiax156up7vq8f8400vja3c5wuttl886209aamgg6rr
+export validator_valoper=aiaxvaloper156up7vq8f8400vja3c5wuttl886209aamxe9xs
 
 # Create faucet key
 aiaxd keys add faucet && aiaxd keys unsafe-export-eth-key faucet --keyring-backend file
-export faucet=aiax19z2q7jk44nmza2drgd4a8gla9tznwzczaanjkt
-export faucet_key=6A8EF19...
+export faucet=aiax1cgjweprkssw3tf3guq2u9dny7jgpejfxy255mx
+export faucet_key=A63FE1585261F07C417F48E725C01748570B7A04AF106A3C539585C10411C81D
 
 # Create orchestrator key
 gorc keys cosmos add orchestrator
-export orchestrator=aiax183wcp7a2c4as8yquzysnj3n9fumrlctn3y0873
+export orchestrator=aiax1dy27k06482v6ezvajyusc2w6ua4av8qe5vnefw
 
 # Create signer key
 gorc keys eth add signer
-export signer=0x2890a823E0Af6DC68eFaCa0af065e3d8100Fcb04
+export signer=0x455212466E1Cca4F3a95875d51B3496435E19cb3
 
 # Deposit some ethereum to signer
 
@@ -168,7 +168,7 @@ aiaxd add-genesis-account "$faucet" 1000000000000000000000000000000000000000000a
 
 # Sign delegate keys
 gorc sign-delegate-keys --args signer "$validator_valoper" 0
-export eth_sign=0x4a62d438dc61c67cf69b5f4721dc7f1a0bb4217e31ad25fdce8069bc18cd8251726ade67cc5e4db5681e87cdc94893d1f3b44271aaf6b9ed5a4a1c45c1680a311b
+export eth_sign=0xa6f5f1ffd18e40e7c8625d68ff752d5f65695aca17e7efe740a026f4cfe130360b711c41b80d83378b379b83dd8e316954319aed93c28ba2d675ba4517373f271b
 
 # Create genesis transactions
 aiaxd gentx "validator" "1000000000000000000000aaiax" \
@@ -198,25 +198,28 @@ export eth_ip=172.22.0.2
 
 # Deploy gravity into ethereum (from repo)
 npm run dev:aiax -- contract deploy -c Gravity --eth-privkey $privkey --cosmos-node http://$cosmos_ip:26657 --eth-node http://$eth_ip:8545
-export gravity=0x079Cc388C0f32A98eA8eD43306f17E3992B20ECE
-export token=0x8E460bC0F0176A49f86f841B0D4A35b40733ad26
+export gravity=0xeD383B6fc43caF995258c88783b2542F7C9A2Dd5
+export token=0x64A4BaEEd96440ffdB402b4b242D4388873981D3
 
 # Edit `data/gorc/config.toml` (set gravity address)
 
 # Run gorc orchestrator
 sudo docker-compose up -d gorc
+
+# Check that orchestrator is running (detach with CTRL+C)
+sudo docker-compose logs -f gorc
 ```
 
 
 ## Setup secondary node (`./deploy/nodeN`)
 ```sh
 # Copy configs
-cp -r $REPO/data/basic ./data
+cp -r $REPO/extra/bootstrap/assets/data ./data
 aiaxd config chain-id "$chain_id"
 
 # Initialize node
 aiaxd init localnode --chain-id "$chain_id"
-export node_id=0e0a54338b48f18d7663d4b64f5e57cd018d5d85
+export node_id=905b6504a8608a77c5d4a24064d9ea6bee44c2d0
 
 # Edit data/gorc/config.toml
 # [gravity]
@@ -231,16 +234,16 @@ cp ../node1/data/aiaxd/node/genesis.json ./data/aiaxd/node/genesis.json
 
 # Create validator key
 aiaxd keys add validator && aiaxd keys show validator --bech val
-export validator=aiax1yau06dp0z345zdyyzczfjmmuluy7c4gf5yefjf
-export validator_valoper=aiaxvaloper1yau06dp0z345zdyyzczfjmmuluy7c4gf52gkh6
+export validator=aiax1wwmg7z6dr88y8dp3v2l5pvgpva2antql07df5a
+export validator_valoper=aiaxvaloper1wwmg7z6dr88y8dp3v2l5pvgpva2antql0suk3w
 
 # Create orchestrator key
 gorc keys cosmos add orchestrator
-export orchestrator=aiax17wgk2q3jqa5hc9kuextfjyluuj0hvxsneteghc
+export orchestrator=aiax194d4vzh4rcc5xzemp6evm90guvrvthaaqlzjkn
 
 # Create signer key
 gorc keys eth add signer
-export signer=0x72f3d403FD03D4e409C57fF317C950248398036f
+export signer=0x3C60DfE069308b357e0Afe7564b1249e762d8Bd1
 
 # Deposit some ethereum to signer
 # Deposit 1000000000000000000000aaiax (1000 AXX) to validator and orchestrator
@@ -256,7 +259,7 @@ sudo docker-compose logs -f aiaxd
 
 # Show validator key
 in_aiaxd tendermint show-validator
-export val_key='{"@type":"/cosmos.crypto.ed25519.PubKey","key":"yPIT..."}'
+export val_key='{"@type":"/cosmos.crypto.ed25519.PubKey","key":"MIjg"}'
 
 # Register staking validator
 in_aiaxd tx staking create-validator \
@@ -267,7 +270,7 @@ in_aiaxd tx staking create-validator \
 
 # Sign delegate keys
 gorc sign-delegate-keys --args signer "$validator_valoper"
-export eth_sign=0xe021a4c9c7b3841c6967e090cb909bfe59f09139e4144372800e5110a486b7e8311db42bbabde220474448bbc354430760a901df315cfe9fa1ac51a6b1408a031b
+export eth_sign=0x73d8465bc4ac3e686421132710444ea2085f1c45781313d5182058ea6ee738052c7e150552ab9df63494df49e8c4bc13499d2f6fae6215eee9b58e51b88dbd211c
 
 # Set gravity delegate keys
 in_aiaxd tx gravity set-delegate-keys --from validator \
@@ -276,4 +279,7 @@ in_aiaxd tx gravity set-delegate-keys --from validator \
 
 # Run gorc orchestrator
 sudo docker-compose up -d gorc
+
+# Check that orchestrator is running (detach with CTRL+C)
+sudo docker-compose logs -f gorc
 ```

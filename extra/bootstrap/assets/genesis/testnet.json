@@ -1,6 +1,6 @@
 {
-  "genesis_time": "2022-05-06T14:21:36.784517322Z",
-  "chain_id": "aiax_568297332-1",
+  "genesis_time": "2022-07-14T00:14:15.830596502Z",
+  "chain_id": "aiax_12344123324-1",
   "initial_height": "1",
   "consensus_params": {
     "block": {
@@ -22,11 +22,7 @@
   },
   "app_hash": "",
   "app_state": {
-    "aiax": {
-      "params": {
-        "enable_erc20_mapping": true
-      }
-    },
+    "aiaxbank": {},
     "auth": {
       "params": {
         "max_memo_characters": "256",
@@ -39,7 +35,7 @@
         {
           "@type": "/ethermint.types.v1.EthAccount",
           "base_account": {
-            "address": "aiax183tjsag82df68k98ff9ldwgxd0l4456jkx3sj0",
+            "address": "aiax156up7vq8f8400vja3c5wuttl886209aamgg6rr",
             "pub_key": null,
             "account_number": "0",
             "sequence": "0"
@@ -49,7 +45,7 @@
         {
           "@type": "/ethermint.types.v1.EthAccount",
           "base_account": {
-            "address": "aiax1zj34gpeejqeaah3eq7r4ew9cfr5xhlqpa8jy4a",
+            "address": "aiax1dy27k06482v6ezvajyusc2w6ua4av8qe5vnefw",
             "pub_key": null,
             "account_number": "0",
             "sequence": "0"
@@ -59,7 +55,7 @@
         {
           "@type": "/ethermint.types.v1.EthAccount",
           "base_account": {
-            "address": "aiax1peuj65dun2u6p4cwuep42fyltkcknc862ytejs",
+            "address": "aiax1cgjweprkssw3tf3guq2u9dny7jgpejfxy255mx",
             "pub_key": null,
             "account_number": "0",
             "sequence": "0"
@@ -78,29 +74,29 @@
       },
       "balances": [
         {
-          "address": "aiax1peuj65dun2u6p4cwuep42fyltkcknc862ytejs",
+          "address": "aiax1dy27k06482v6ezvajyusc2w6ua4av8qe5vnefw",
+          "coins": [
+            {
+              "denom": "aaiax",
+              "amount": "1000000000000000000000"
+            }
+          ]
+        },
+        {
+          "address": "aiax156up7vq8f8400vja3c5wuttl886209aamgg6rr",
+          "coins": [
+            {
+              "denom": "aaiax",
+              "amount": "1000000000000000000000"
+            }
+          ]
+        },
+        {
+          "address": "aiax1cgjweprkssw3tf3guq2u9dny7jgpejfxy255mx",
           "coins": [
             {
               "denom": "aaiax",
               "amount": "1000000000000000000000000000000000000000000"
-            }
-          ]
-        },
-        {
-          "address": "aiax1zj34gpeejqeaah3eq7r4ew9cfr5xhlqpa8jy4a",
-          "coins": [
-            {
-              "denom": "aaiax",
-              "amount": "1000000000000000000000"
-            }
-          ]
-        },
-        {
-          "address": "aiax183tjsag82df68k98ff9ldwgxd0l4456jkx3sj0",
-          "coins": [
-            {
-              "denom": "aaiax",
-              "amount": "1000000000000000000000"
             }
           ]
         }
@@ -236,11 +232,11 @@
                   "max_change_rate": "0.010000000000000000"
                 },
                 "min_self_delegation": "1",
-                "delegator_address": "aiax183tjsag82df68k98ff9ldwgxd0l4456jkx3sj0",
-                "validator_address": "aiaxvaloper183tjsag82df68k98ff9ldwgxd0l4456jkgq0hu",
+                "delegator_address": "aiax156up7vq8f8400vja3c5wuttl886209aamgg6rr",
+                "validator_address": "aiaxvaloper156up7vq8f8400vja3c5wuttl886209aamxe9xs",
                 "pubkey": {
                   "@type": "/cosmos.crypto.ed25519.PubKey",
-                  "key": "UT14uP17ZzV9fZuS2vrPYFjGj4PwMlqo2J6eYZsHhyg="
+                  "key": "DNBzbDPfat4DYwI/72VH5OAdzWx5XkSL8iYKGXmpBv0="
                 },
                 "value": {
                   "denom": "aaiax",
@@ -249,13 +245,13 @@
               },
               {
                 "@type": "/gravity.v1.MsgDelegateKeys",
-                "validator_address": "aiaxvaloper183tjsag82df68k98ff9ldwgxd0l4456jkgq0hu",
-                "orchestrator_address": "aiax1zj34gpeejqeaah3eq7r4ew9cfr5xhlqpa8jy4a",
-                "ethereum_address": "0xE198b165De0Db5A2327F2B3be146aB03D02978C3",
-                "eth_signature": "A4my37GtzuJ6Y4OLPY6ZIeLzIHpmiqDCoXE2HY5kbkx8WucXLt4xLZ9p9Z8J1rzfQTWulpesMwy/pf5KFjvs3Rw="
+                "validator_address": "aiaxvaloper156up7vq8f8400vja3c5wuttl886209aamxe9xs",
+                "orchestrator_address": "aiax1dy27k06482v6ezvajyusc2w6ua4av8qe5vnefw",
+                "ethereum_address": "0x455212466E1Cca4F3a95875d51B3496435E19cb3",
+                "eth_signature": "pvXx/9GOQOfIYl1o/3UtX2VpWsoX5+/nQKAm9M/hMDYLcRxBuA2DN4s3m4PdjjFpVDGa7ZPCi6LWdbpFFzc/Jxs="
               }
             ],
-            "memo": "a2f053e9f5348f85dcdbabdb378661ff5290c6c8@127.0.0.1:26656",
+            "memo": "723125b1aa39d592e24cd9841ea242f032d4c66c@127.0.0.1:26656",
             "timeout_height": "0",
             "extension_options": [],
             "non_critical_extension_options": []
@@ -265,7 +261,7 @@
               {
                 "public_key": {
                   "@type": "/ethermint.crypto.v1.ethsecp256k1.PubKey",
-                  "key": "ArQA2f3eM8Z57TbnVkLfihF48GSb+ghyROET3F0Nhhh1"
+                  "key": "AgZtGMLvZpDFJ/V3CADBk71IKpU+Bh43zEf2Nq1u1syq"
                 },
                 "mode_info": {
                   "single": {
@@ -283,7 +279,7 @@
             }
           },
           "signatures": [
-            "344KaZaDeGpN+be2WqdIZVZgVmfNOIGoXpIXeolB28x9DvEKZUR60wZm1M+5eE9zpdoaB2bIt5wfXTwUZMs6vwE="
+            "zNl78w2kvW/vgsu9yPFnMuB6EhgmtbFYYqTrECwuYgl5uHVxlW9XwHKVh7knxHXszkwJwWeWAp6a5+Y25N4/nQA="
           ]
         }
       ]
@@ -297,7 +293,7 @@
         "min_deposit": [
           {
             "denom": "aaiax",
-            "amount": "1000000000000000000000"
+            "amount": "10000000000000000000"
           }
         ],
         "max_deposit_period": "172800s"
@@ -313,7 +309,7 @@
     },
     "gravity": {
       "params": {
-        "gravity_id": "3fcba2e9ad501f11f62376a832024e",
+        "gravity_id": "5194a45e00540042d1a73e187ec41c",
         "contract_source_hash": "",
         "bridge_ethereum_address": "0x0000000000000000000000000000000000000000",
         "bridge_chain_id": "0",
@@ -397,7 +393,7 @@
     },
     "staking": {
       "params": {
-        "unbonding_time": "1814400s",
+        "unbonding_time": "21600s",
         "max_validators": 100,
         "max_entries": 7,
         "historical_entries": 10000,
