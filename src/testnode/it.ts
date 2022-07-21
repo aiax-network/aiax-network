@@ -305,6 +305,40 @@ async function testSendAiaxToExternalToken(eth: EthWrapper, node: Node, token_ad
   console.log('[testSendAiaxToExternalToken] Ok');
 }
 
+async function testSendNativeToAiaxTokenMetaMask(eth: EthWrapper, node: Node) {
+  console.log('[testSendNativeToAiaxTokenMetaMask] Start');
+
+  const src = 'aiax1ncv7mkjmrnxlrzemrhaymx2jl3qvkadun0lwmx';
+  const src_hex = '0x9e19edda5b1ccdf18b3b1dfa4d9952fc40cb75bc';
+  const src_pk = '0x277305977e2818a736a3b4d8f2bb817db033c1f1f2c320000d4708d943339f48';
+  const dst = await node.gorc.ensureEthKey('test_testSendAiaxToExternalToken_dst');
+
+  await node.aiaxd.sendTokens('test_bank', src, '1000000000000000000aaiax');
+  console.log(`Deposited 1aiax to ${src}`);
+
+  await node.aiaxd.sendToEthereum(
+    src_pk,
+    dst,
+    node.token,
+    '900000000000000000',
+  );
+
+  await node.aiaxd.requestBatchTx(
+    src_pk,
+    node.token,
+  );
+
+  console.log(`Sent cosmos-to-eth backbridge transaction, awaiting for balance to change`);
+  while ((await eth.getErc20Balance(node.token, dst)) === '0') {
+    await new Promise((resolve, _) => setTimeout(resolve, 1000));
+  }
+
+  let balance = await eth.getErc20Balance(node.token, dst);
+  assert.equal(balance, '900000000000000000');
+
+  console.log('[testSendNativeToAiaxTokenMetaMask] Ok');
+}
+
 async function singleNodeTest(opts: any) {
   let base_dir = path.resolve(process.cwd(), 'test_data');
   fs.rmSync(base_dir, { force: true, recursive: true });
@@ -327,6 +361,8 @@ async function singleNodeTest(opts: any) {
 
   await testSendExternalTokenToAiax(eth, node1, external_token);
   await testSendAiaxToExternalToken(eth, node1, external_token);
+
+  await testSendNativeToAiaxTokenMetaMask(eth, node1);
 }
 
 async function multiNodeTest(opts: any) {
@@ -353,6 +389,8 @@ async function multiNodeTest(opts: any) {
 
   await testSendExternalTokenToAiax(eth, node2, external_token);
   await testSendAiaxToExternalToken(eth, node2, external_token);
+
+  await testSendNativeToAiaxTokenMetaMask(eth, node2);
 }
 
 function wrapStop(test: (any) => Promise<any>) {

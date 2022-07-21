@@ -320,6 +320,36 @@ export class AiaxdWrapper {
     ).trim();
   }
 
+  async sendToEthereum(from_pk: string, to_addr: string, token_addr: string, amount: string): Promise<any> {
+    return (
+      await processRunGetOutput('eth', [
+        'contract:send',
+        '--network',
+        `http://127.0.0.1:${this.opts.listen.json_rpc}`,
+        '--pk',
+        from_pk,
+        '--confirmation-blocks=3',
+        `./artifacts/contracts/BackBridge.sol/BackBridge.json@0xCc510B6CD418afBfbb1D1d75b94d37659DF8eB91`,
+        `SendToEthereum("${to_addr}", "${token_addr}", "${amount}", "${token_addr}", "1")`,
+      ])
+    ).trim();
+  }
+
+  async requestBatchTx(from_pk: string, token_addr: string): Promise<any> {
+    return (
+      await processRunGetOutput('eth', [
+        'contract:send',
+        '--network',
+        `http://127.0.0.1:${this.opts.listen.json_rpc}`,
+        '--pk',
+        from_pk,
+        '--confirmation-blocks=3',
+        `./artifacts/contracts/BackBridge.sol/BackBridge.json@0xCc510B6CD418afBfbb1D1d75b94d37659DF8eB91`,
+        `RequestBatchTx("${token_addr}")`,
+      ])
+    ).trim();
+  }
+
   async getTransaction(hash: string): Promise<any> {
     return JSON.parse(await processRunGetOutput(this.opts.binary, [
       "--home",

@@ -3,6 +3,8 @@
 /* eslint-disable */
 export { Erc20Factory } from "./Erc20Factory";
 export type { Erc20 } from "./Erc20";
+export { BackBridgeFactory } from "./BackBridgeFactory";
+export type { BackBridge } from "./BackBridge";
 export { CosmosErc20Factory } from "./CosmosErc20Factory";
 export type { CosmosErc20 } from "./CosmosErc20";
 export { Erc20TokenOneFactory } from "./Erc20TokenOneFactory";
