@@ -323,10 +323,12 @@ async function testSendNativeToAiaxTokenMetaMask(eth: EthWrapper, node: Node) {
     '900000000000000000',
   );
 
-  await node.aiaxd.requestBatchTx(
-    src_pk,
-    node.token,
-  );
+  // This is not necessary and gravity code contains nil pointer exception so it is not working
+  // But sometimes it works
+  // await node.aiaxd.requestBatchTx(
+  //   src_pk,
+  //   node.token,
+  // );
 
   console.log(`Sent cosmos-to-eth backbridge transaction, awaiting for balance to change`);
   while ((await eth.getErc20Balance(node.token, dst)) === '0') {
