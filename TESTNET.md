@@ -16,7 +16,7 @@
     ```
 4. Create some `chain_id`, for example:
     ```sh
-    export chain_id=aiax_12344123324-1
+    export chain_id=aiax_789621341-1
     ```
 5. Some useful aliases for node setup:
     ```sh
@@ -134,27 +134,27 @@ aiaxd config chain-id "$chain_id"
 
 # Initialize node
 aiaxd init localnode --chain-id "$chain_id"
-export node_id=723125b1aa39d592e24cd9841ea242f032d4c66c
+export node_id=fbff652da5259ec704d675731c275c7dff4d667f
 
 # Edit `data/aiaxd/node/genesis.json` (check `src/testnode/wrappers/aiaxd.ts:452`)
 
 # Create validator key
 aiaxd keys add validator && aiaxd keys show validator --bech val
-export validator=aiax156up7vq8f8400vja3c5wuttl886209aamgg6rr
-export validator_valoper=aiaxvaloper156up7vq8f8400vja3c5wuttl886209aamxe9xs
+export validator=aiax1depdhlc633rghk3r59pyxc5kv3h4wdulam6ps6
+export validator_valoper=aiaxvaloper1depdhlc633rghk3r59pyxc5kv3h4wdula4t74f
 
 # Create faucet key
 aiaxd keys add faucet && aiaxd keys unsafe-export-eth-key faucet --keyring-backend file
-export faucet=aiax1cgjweprkssw3tf3guq2u9dny7jgpejfxy255mx
-export faucet_key=A63FE1585261F07C417F48E725C01748570B7A04AF106A3C539585C10411C81D
+export faucet=aiax1u3654yj44eprt0fcwl2eh0uesphsdm7z5dmvfw
+export faucet_key=E261EFC...
 
 # Create orchestrator key
 gorc keys cosmos add orchestrator
-export orchestrator=aiax1dy27k06482v6ezvajyusc2w6ua4av8qe5vnefw
+export orchestrator=aiax1hchyr2zsrz359pqfp4x3wfy3vcl9enm8lj5vch
 
 # Create signer key
 gorc keys eth add signer
-export signer=0x455212466E1Cca4F3a95875d51B3496435E19cb3
+export signer=0x2818d5A1e7A14DC6bf2d0eB8a14f560063A7378b
 
 # Deposit some ethereum to signer
 
@@ -168,7 +168,7 @@ aiaxd add-genesis-account "$faucet" 1000000000000000000000000000000000000000000a
 
 # Sign delegate keys
 gorc sign-delegate-keys --args signer "$validator_valoper" 0
-export eth_sign=0xa6f5f1ffd18e40e7c8625d68ff752d5f65695aca17e7efe740a026f4cfe130360b711c41b80d83378b379b83dd8e316954319aed93c28ba2d675ba4517373f271b
+export eth_sign=0x238dad7dbe98ac598d6e50d172aca251530c394e9da31549602bafb037ef6dc27eb244af4774a1400a028602103ba5e33bdc715f99d706ff56dfcaa3c3eb8e4e1c
 
 # Create genesis transactions
 aiaxd gentx "validator" "1000000000000000000000aaiax" \
@@ -198,8 +198,8 @@ export eth_ip=172.22.0.2
 
 # Deploy gravity into ethereum (from repo)
 npm run dev:aiax -- contract deploy -c Gravity --eth-privkey $privkey --cosmos-node http://$cosmos_ip:26657 --eth-node http://$eth_ip:8545
-export gravity=0xeD383B6fc43caF995258c88783b2542F7C9A2Dd5
-export token=0x64A4BaEEd96440ffdB402b4b242D4388873981D3
+export gravity=0x6904DefD3a904399f6DBf863c1a773AFBD9D18FE
+export token=0x1325CA0C6547Fd9488fF2318AA738857f9CaF891
 
 # Edit `data/gorc/config.toml` (set gravity address)
 
@@ -219,7 +219,7 @@ aiaxd config chain-id "$chain_id"
 
 # Initialize node
 aiaxd init localnode --chain-id "$chain_id"
-export node_id=905b6504a8608a77c5d4a24064d9ea6bee44c2d0
+export node_id=7c409a7d992bd2fd37b6e6b47e9c170b97f76fd3
 
 # Edit data/gorc/config.toml
 # [gravity]
@@ -234,16 +234,16 @@ cp ../node1/data/aiaxd/node/genesis.json ./data/aiaxd/node/genesis.json
 
 # Create validator key
 aiaxd keys add validator && aiaxd keys show validator --bech val
-export validator=aiax1wwmg7z6dr88y8dp3v2l5pvgpva2antql07df5a
-export validator_valoper=aiaxvaloper1wwmg7z6dr88y8dp3v2l5pvgpva2antql0suk3w
+export validator=aiax1rdl727jc0n92suzdn5cl8sjrjw9hadd948twgr
+export validator_valoper=aiaxvaloper1rdl727jc0n92suzdn5cl8sjrjw9hadd94f63ds
 
 # Create orchestrator key
 gorc keys cosmos add orchestrator
-export orchestrator=aiax194d4vzh4rcc5xzemp6evm90guvrvthaaqlzjkn
+export orchestrator=aiax15mvr82jpgf7je7dzh97q2jcxky5ks6llnj46wf
 
 # Create signer key
 gorc keys eth add signer
-export signer=0x3C60DfE069308b357e0Afe7564b1249e762d8Bd1
+export signer=0x14282eF6Fe0C4BcdDd60881EAe6692B9c8A7E51C
 
 # Deposit some ethereum to signer
 # Deposit 1000000000000000000000aaiax (1000 AXX) to validator and orchestrator
@@ -259,7 +259,7 @@ sudo docker-compose logs -f aiaxd
 
 # Show validator key
 in_aiaxd tendermint show-validator
-export val_key='{"@type":"/cosmos.crypto.ed25519.PubKey","key":"MIjg"}'
+export val_key='{"@type":"/cosmos.crypto.ed25519.PubKey","key":"GVZc..."}'
 
 # Register staking validator
 in_aiaxd tx staking create-validator \
@@ -270,7 +270,7 @@ in_aiaxd tx staking create-validator \
 
 # Sign delegate keys
 gorc sign-delegate-keys --args signer "$validator_valoper"
-export eth_sign=0x73d8465bc4ac3e686421132710444ea2085f1c45781313d5182058ea6ee738052c7e150552ab9df63494df49e8c4bc13499d2f6fae6215eee9b58e51b88dbd211c
+export eth_sign=0x68202fa2d6b14938f53ac0debe42b87beb8e8fda402a581539ade4cc99bf571e350928464e59c4aebe5eb02c6eb4defa03b4218c0e256fcd914cc6014fd0f9a31b
 
 # Set gravity delegate keys
 in_aiaxd tx gravity set-delegate-keys --from validator \
